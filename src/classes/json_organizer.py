@@ -6,9 +6,10 @@ Processes email data into structured JSON format with local attachment handling.
 from typing import Dict
 from pathlib import Path
 from datetime import datetime
-from utils.email_parser import EmailParser
-from utils.file_handler import FileHandler
+from classes.email_parser import EmailParser
+from classes.file_handler import FileHandler
 import json
+from src.paths import SUMMARY_FILE
 
 class JsonOrganizer:
     """Organizes email data into structured JSON format."""
@@ -94,11 +95,9 @@ class JsonOrganizer:
         Returns:
             dict: Summary information including total emails and last updated
         """
-        summary_path = self.base_dir / 'data' / 'processed' / 'email_summary.json'
-        
         try:
-            if summary_path.exists():
-                with open(summary_path, 'r', encoding='utf-8') as f:
+            if SUMMARY_FILE.exists():
+                with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
             else:
                 # Create default summary if it doesn't exist
@@ -107,8 +106,8 @@ class JsonOrganizer:
                     'last_updated': datetime.now().isoformat(),
                     'emails': []
                 }
-                summary_path.parent.mkdir(parents=True, exist_ok=True)
-                with open(summary_path, 'w', encoding='utf-8') as f:
+                SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
+                with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
                     json.dump(summary, f, indent=2)
                 return summary
                 
@@ -127,7 +126,6 @@ class JsonOrganizer:
         Args:
             email_data: Processed email data to add to summary
         """
-        summary_path = self.base_dir / 'data' / 'processed' / 'email_summary.json'
         summary = self.get_processing_summary()
         
         # Add new email to summary
@@ -139,9 +137,6 @@ class JsonOrganizer:
             'date': email_data['metadata']['date']
         })
         
-        # Ensure directory exists
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        
         # Save updated summary
-        with open(summary_path, 'w', encoding='utf-8') as f:
+        with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
             json.dump(summary, f, indent=2)

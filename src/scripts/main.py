@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Optional, List, Dict
 import argparse
 import sys
-from scripts.json_organizer import JsonOrganizer
-from scripts.search_engine import SearchEngine
+from classes.json_organizer import JsonOrganizer
+from classes.search_engine import SearchEngine
 
 class InboxForge:
     """Main application class for InboxForge."""

@@ -11,12 +11,13 @@ from whoosh.fields import Schema, TEXT, ID, DATETIME
 from whoosh.qparser import QueryParser, MultifieldParser
 from whoosh.query import DateRange
 from datetime import datetime
+from src.paths import SEARCH_INDEX_DIR
 
 class SearchEngine:
     """Provides email search functionality using Whoosh."""
     
     def __init__(self, base_dir: Path):
-        self.index_dir = base_dir / 'data' / 'search_index'
+        self.index_dir = SEARCH_INDEX_DIR
         self.schema = Schema(
             id=ID(stored=True, unique=True),
             sender=TEXT(stored=True),
