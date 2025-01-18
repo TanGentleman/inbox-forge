@@ -48,43 +48,43 @@ class JsonOrganizer:
             eml_path: Path to the .eml file
 
         Returns:
-            ProcessedEmail: Structured email data
+            ProcessedEmail: Structured email data, or None if duplicate email
 
         Raises:
             IOError: If email file cannot be read
             ValueError: If email data is invalid
         """
+        raw_email_data = None
         try:
             raw_email_data = self.email_parser.parse_email_file(eml_path)
-
             processed_email = self._build_processed_email(raw_email_data, eml_path)
             self._process_attachments(processed_email, raw_email_data)
 
+            # Save email and update tracking
             self.file_handler.save_processed_email(processed_email)
             self._update_summary(processed_email)
-
-            # Add email ID to tracking and append to file
-            self.existing_ids.add(processed_email['id'])
-            with open(self.email_ids_file, 'a') as f:
-                f.write(f"{processed_email['id']}\n")
+            self._track_email_id(processed_email['id'])
 
             logger.debug(
-                'Processed email %s: %s',
-                processed_email['id'],
-                processed_email['metadata']['subject'],
+                f"Processed email {processed_email['id']}: {processed_email['metadata']['subject']}"
             )
-
             return processed_email
+
         except DuplicateEmailError:
-            logger.warning('Skipping duplicate email: %s', eml_path.name)
+            logger.warning(f'Skipping duplicate email: {eml_path.name}')
             return None
         except Exception as e:
-            logger.error('Failed to process %s: %s', eml_path.name, str(e))
+            logger.error(f'Failed to process {eml_path.name}: {str(e)}')
             logger.debug(
-                'Raw email data structure: %s',
-                raw_email_data.keys() if 'raw_email_data' in locals() else 'Not available',
+                f'Raw email data structure: {raw_email_data.keys() if raw_email_data else "Not available"}'
             )
             raise
+
+    def _track_email_id(self, email_id: str) -> None:
+        """Track processed email ID in memory and on disk."""
+        self.existing_ids.add(email_id)
+        with open(self.email_ids_file, 'a') as f:
+            f.write(f'{email_id}\n')
 
     def _build_processed_email(self, raw_data: ParsedEmail, eml_path: Path) -> ProcessedEmail:
         """Build processed email structure from raw data."""
@@ -141,7 +141,7 @@ class JsonOrganizer:
             return self._create_default_summary()
 
         except Exception as e:
-            logger.warning('Could not read summary file: %s', e)
+            logger.warning(f'Could not read summary file: {e}')
             return self._create_default_summary()
 
     def _create_default_summary(self) -> ProcessingSummary:
@@ -157,7 +157,7 @@ class JsonOrganizer:
             with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
         except Exception as e:
-            logger.warning('Failed to save default summary: %s', e)
+            logger.warning(f'Failed to save default summary: {e}')
 
         return summary
 
@@ -185,7 +185,7 @@ class JsonOrganizer:
                 json.dump(summary, f, indent=2)
 
         except Exception as e:
-            logger.error('Failed to update summary: %s', e)
+            logger.error(f'Failed to update summary: {e}')
 
     def _load_existing_ids(self) -> set[str]:
         """Load existing email IDs from storage."""
@@ -196,7 +196,7 @@ class JsonOrganizer:
             with open(self.email_ids_file, 'r') as f:
                 return set(line.strip() for line in f if line.strip())
         except Exception as e:
-            logger.error('Failed to load existing IDs: %s', e)
+            logger.error(f'Failed to load existing IDs: {e}')
             return set()
 
     def get_email_ids(self) -> set[str]:
