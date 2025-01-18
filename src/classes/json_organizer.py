@@ -3,7 +3,7 @@ JSON organizer for InboxForge.
 Processes email data into structured JSON format with local attachment handling.
 """
 
-from typing import Dict, TypedDict
+from typing import Dict, TypedDict, List
 from pathlib import Path
 from datetime import datetime
 import json
@@ -12,14 +12,40 @@ from src.classes.email_parser import EmailParser, ParsedEmail
 from src.classes.file_handler import FileHandler
 from src.paths import SUMMARY_FILE
 
-logger = logging.getLogger(__name__)
+class EmailMetadata(TypedDict):
+    """Schema for email metadata."""
+    sender: str
+    recipient: List[str]
+    subject: str
+    date: str
+    original_file: str
+    processed_date: str
+
+class EmailAttachment(TypedDict):
+    """Schema for email attachment data."""
+    name: str
+    type: str
+    size: int
+    location: str
 
 class ProcessedEmail(TypedDict):
     """Schema for processed email data."""
     id: str
-    metadata: Dict
-    content: Dict
-    attachments: list
+    metadata: EmailMetadata
+    body: Dict[str, str]
+    attachments: List[EmailAttachment]
+
+class SummaryEmail(TypedDict):
+    """Schema for summary email entry."""
+    id: str
+    subject: str
+    date: str
+
+class ProcessingSummary(TypedDict):
+    """Schema for email processing summary."""
+    total_emails: int
+    last_updated: str
+    emails: List[SummaryEmail]
 
 class JsonOrganizer:
     """Organizes email data into structured JSON format."""
@@ -59,7 +85,7 @@ class JsonOrganizer:
             self.file_handler.save_processed_email(processed_email)
             self._update_summary(processed_email)
             
-            logger.debug(
+            logging.debug(
                 "Processed email %s: %s", 
                 processed_email['id'],
                 processed_email['metadata']['subject']
@@ -68,8 +94,8 @@ class JsonOrganizer:
             return processed_email
             
         except Exception as e:
-            logger.error("Failed to process %s: %s", eml_path.name, str(e))
-            logger.debug(
+            logging.error("Failed to process %s: %s", eml_path.name, str(e))
+            logging.debug(
                 "Raw email data structure: %s", 
                 raw_email_data.keys() if 'raw_email_data' in locals() else "Not available"
             )
@@ -77,7 +103,7 @@ class JsonOrganizer:
     
     def _build_processed_email(self, raw_data: ParsedEmail, eml_path: Path) -> ProcessedEmail:
         """Build processed email structure from raw data."""
-        content = raw_data['body'].get('plain', '') if self.exclude_html else raw_data['body']
+        body = raw_data['body'].get('plain', '') if self.exclude_html else raw_data['body']
         
         return {
             'id': raw_data['id'],
@@ -89,7 +115,7 @@ class JsonOrganizer:
                 'original_file': str(eml_path.name),
                 'processed_date': datetime.now().isoformat()
             },
-            'content': content,
+            'body': body,
             'attachments': []
         }
     
@@ -107,12 +133,12 @@ class JsonOrganizer:
                 'location': location
             })
     
-    def get_processing_summary(self) -> Dict:
+    def get_processing_summary(self) -> ProcessingSummary:
         """
         Get a summary of processed emails.
         
         Returns:
-            dict: Summary information including total emails and last updated
+            ProcessingSummary: Summary information including total emails and last updated
         """
         try:
             if SUMMARY_FILE.exists():
@@ -122,12 +148,12 @@ class JsonOrganizer:
             return self._create_default_summary()
                 
         except Exception as e:
-            logger.warning("Could not read summary file: %s", e)
+            logging.warning("Could not read summary file: %s", e)
             return self._create_default_summary()
     
-    def _create_default_summary(self) -> Dict:
+    def _create_default_summary(self) -> ProcessingSummary:
         """Create and save default summary structure."""
-        summary = {
+        summary: ProcessingSummary = {
             'total_emails': 0,
             'last_updated': datetime.now().isoformat(),
             'emails': []
@@ -138,7 +164,7 @@ class JsonOrganizer:
             with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
         except Exception as e:
-            logger.warning("Failed to save default summary: %s", e)
+            logging.warning("Failed to save default summary: %s", e)
             
         return summary
     
@@ -164,4 +190,4 @@ class JsonOrganizer:
                 json.dump(summary, f, indent=2)
                 
         except Exception as e:
-            logger.error("Failed to update summary: %s", e)
+            logging.error("Failed to update summary: %s", e)
