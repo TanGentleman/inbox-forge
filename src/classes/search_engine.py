@@ -43,7 +43,7 @@ class SearchEngine:
     # Fields available for searching
     SEARCHABLE_FIELDS = [
         'subject',
-        'body', 
+        'content', 
         'sender',
         'recipient'
     ]
@@ -104,14 +104,13 @@ class SearchEngine:
         
         try:
             writer = self.ix.writer()
-            body_text = self._extract_body_text(email_data['body'])
-            
+
             writer.update_document(
                 id=email_data['id'],
                 sender=email_data['metadata']['sender'],
                 recipient=' '.join(email_data['metadata']['recipient']),
                 subject=email_data['metadata']['subject'],
-                body=body_text,
+                body=email_data['content'],
                 date=datetime.fromisoformat(email_data['metadata']['date'])
             )
             writer.commit()
@@ -122,16 +121,9 @@ class SearchEngine:
     
     def _validate_email_data(self, email_data: ProcessedEmail) -> None:
         """Validate required email fields are present."""
-        required_fields = ['id', 'metadata', 'body']
+        required_fields = ['id', 'metadata', 'content']
         if missing := [f for f in required_fields if f not in email_data]:
             raise ValueError(f"Missing required fields: {', '.join(missing)}")
-            
-    def _extract_body_text(self, body: Union[dict, str]) -> str:
-        """Extract searchable text from email body."""
-        if isinstance(body, dict):
-            return f"{body.get('plain', '')} {body.get('html', '')}".strip()
-        logger.warning("Body is not a dictionary!")
-        return str(body)
     
     def search(
         self,

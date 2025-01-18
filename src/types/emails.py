@@ -38,7 +38,7 @@ class ProcessedEmail(TypedDict):
     """Schema for processed email data."""
     id: str
     metadata: EmailMetadata
-    body: dict[str, str]
+    content: str
     attachments: List[EmailAttachment]
 
 class SummaryEmail(TypedDict):
