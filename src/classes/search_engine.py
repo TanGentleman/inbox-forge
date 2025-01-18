@@ -11,7 +11,7 @@ Example usage:
     # Advanced search with filters
     results = search_engine.search(
         query="project update",
-        fields=["subject", "body"], 
+        fields=["subject", "content"], 
         date_range=(start_date, end_date)
     )
 """
@@ -47,7 +47,7 @@ class SearchEngine:
             sender=TEXT(stored=True),
             recipient=TEXT(stored=True), 
             subject=TEXT(stored=True),
-            body=TEXT,
+            content=TEXT,
             date=DATETIME(stored=True)
         )
         self._ensure_index()
@@ -81,7 +81,7 @@ class SearchEngine:
                 sender=email_data['metadata']['sender'],
                 recipient=' '.join(email_data['metadata']['recipient']),
                 subject=email_data['metadata']['subject'],
-                body=email_data['content'],
+                content=email_data['content'],
                 date=datetime.fromisoformat(email_data['metadata']['date'])
             )
             writer.commit()

@@ -7,14 +7,14 @@ Usage:
     
     # Search by field
     python -m src.scripts.search "from:john@example.com"
-    python -m src.scripts.search "project report" --in subject,body
+    python -m src.scripts.search "project report" --in subject,content
     
     # Filter by date
     python -m src.scripts.search "meeting" --after 2024-01-01 --before 2024-03-01
 
 Supports:
     - Field prefixes: from:, to:, subject:
-    - Field filtering: --in subject,body,sender,recipient 
+    - Field filtering: --in subject,content,sender,recipient 
     - Date filtering: --after/--before YYYY-MM-DD
     - Custom index location: --dir PATH
 """
@@ -83,12 +83,12 @@ def main():
 Examples:
   python -m src.scripts.search "important meeting"              # Search all fields
   python -m src.scripts.search "from:john@example.com"         # Search by sender
-  python -m src.scripts.search "meeting" --in subject,body     # Search specific fields
+  python -m src.scripts.search "meeting" --in subject,content     # Search specific fields
   python -m src.scripts.search "report" --after 2024-01-01     # Filter by date
 """)
     
     parser.add_argument('query', help='Search query (e.g. "important meeting", "from:john@example.com")')
-    parser.add_argument('--in', dest='fields', help='Fields to search: subject,body,sender,recipient',
+    parser.add_argument('--in', dest='fields', help='Fields to search: subject,content,sender,recipient',
                        type=lambda s: [x.strip() for x in s.split(',')])
     parser.add_argument('--after', help='Start date (YYYY-MM-DD)')
     parser.add_argument('--before', help='End date (YYYY-MM-DD)')
