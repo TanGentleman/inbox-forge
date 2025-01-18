@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "inbox-forge"
+version = "0.1.0"
+description = "Sort, search, and manage your emails"
+authors = ["Tanuj <Tanuj@cmu.edu>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+whoosh = "^2.7.4"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.format]
+quote-style = "single"
