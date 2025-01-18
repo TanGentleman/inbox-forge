@@ -24,18 +24,13 @@ from typing import Dict, List, Optional, Tuple, Union
 from whoosh import index
 from whoosh.fields import DATETIME, ID, TEXT, Schema
 from whoosh.qparser import MultifieldParser
-from whoosh.query import DateRange
+from whoosh.query import And, DateRange, Every
 
 from src.classes.json_organizer import ProcessedEmail
 from src.paths import SEARCH_INDEX_DIR
+from src.types.errors import SearchError
 
 logger = logging.getLogger(__name__)
-
-
-class SearchError(Exception):
-    """Custom exception for search-related errors."""
-    pass
-
 
 class SearchEngine:
     """Email search engine using Whoosh for full-text search."""
@@ -135,7 +130,7 @@ class SearchEngine:
         Search indexed emails with optional filters.
         
         Args:
-            query: Search query string
+            query: Search query string (empty string returns all emails within date range)
             fields: Specific fields to search (defaults to all fields)
             date_range: Optional (start_date, end_date) tuple for filtering
             
@@ -143,10 +138,8 @@ class SearchEngine:
             List of matching email dictionaries
             
         Raises:
-            ValueError: If query is empty or fields are invalid
             SearchError: If search fails
         """
-        self._validate_search_params(query, fields)
         search_fields = fields or self.SEARCHABLE_FIELDS
             
         try:
@@ -161,18 +154,28 @@ class SearchEngine:
             
     def _validate_search_params(self, query: str, fields: Optional[List[str]]) -> None:
         """Validate search parameters."""
-        if not query.strip():
-            raise ValueError("Search query cannot be empty")
-            
         if fields and (invalid := set(fields) - set(self.SEARCHABLE_FIELDS)):
             raise ValueError(f"Invalid search fields: {', '.join(invalid)}")
             
     def _build_search_query(self, query: str, fields: List[str], date_range: Optional[Tuple[datetime, datetime]]):
         """Build the search query with filters."""
-        parsed_query = MultifieldParser(fields, self.ix.schema).parse(query)
+        # Start with a query that matches everything
+        final_query = Every()
+
+        # Add text search if query is not empty
+        if query.strip():
+            final_query = MultifieldParser(fields, self.ix.schema).parse(query)
         
+        # Add date range filter if provided
         if date_range:
             start_date, end_date = date_range
-            parsed_query &= DateRange('date', start_date, end_date)
+            if start_date and end_date:
+                date_query = DateRange('date', start_date, end_date)
+            elif start_date:
+                date_query = DateRange('date', start_date, None)
+            elif end_date:
+                date_query = DateRange('date', None, end_date)
+                
+            final_query = And([final_query, date_query])
             
-        return parsed_query
+        return final_query
