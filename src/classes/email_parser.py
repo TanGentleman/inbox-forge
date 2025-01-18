@@ -13,35 +13,21 @@ from typing import Dict, List, Optional, Union, TypedDict
 import hashlib
 import logging
 
+from src.types.emails import ParsedEmail, EmailBody, EmailAttachment
+from src.types.errors import DuplicateEmailError
+
 logger = logging.getLogger(__name__)
-
-class EmailBody(TypedDict):
-    """Email body content in plain text and optional HTML."""
-    plain: str
-    html: Optional[str]
-
-class EmailAttachment(TypedDict):
-    """Email attachment metadata and content."""
-    name: str
-    type: str
-    size: int
-    content: bytes
-
-class ParsedEmail(TypedDict):
-    """Complete parsed email data structure."""
-    id: str
-    sender: str
-    recipient: List[str]
-    subject: str
-    date: str
-    body: EmailBody
-    attachments: List[EmailAttachment]
 
 class EmailParser:
     """Parses .eml files into structured data."""
     
-    def __init__(self):
-        """Initialize with default values and email parser."""
+    def __init__(self, existing_ids: Optional[set[str]] = None):
+        """
+        Initialize with default values and email parser.
+        
+        Args:
+            existing_ids: Optional set of existing email IDs to avoid duplicates
+        """
         self.parser = BytesParser(policy=policy.default)
         self.default_date = datetime.now().isoformat()
         self.default_values = {
@@ -50,6 +36,19 @@ class EmailParser:
             'recipients': ['[No Recipients]'],
             'body': '[Could not extract email body]'
         }
+        self.existing_ids = existing_ids or set()
+
+    def _generate_email_id(self, content: bytes) -> str:
+        """
+        Generate a unique ID for an email based on its content.
+        
+        Args:
+            content: Raw email content bytes
+            
+        Returns:
+            str: 16-character hexadecimal ID
+        """
+        return hashlib.sha256(content).hexdigest()[:16]
 
     def parse_email_file(self, eml_path: Union[str, Path]) -> ParsedEmail:
         """
@@ -64,13 +63,21 @@ class EmailParser:
         Raises:
             IOError: If file cannot be read
             email.errors.MessageParseError: If parsing fails
+            DuplicateEmailError: If email is a duplicate
         """
         try:
             content = Path(eml_path).read_bytes()
+            email_id = self._generate_email_id(content)
+            
+            if email_id in self.existing_ids:
+                logger.debug("Duplicate email detected: %s", email_id)
+                raise DuplicateEmailError(f"Email with ID {email_id} already exists")
+                
+            self.existing_ids.add(email_id)
             msg = self.parser.parsebytes(content)
             
             email_data = {
-                'id': hashlib.sha256(content).hexdigest()[:16],
+                'id': email_id,
                 'sender': self._get_header(msg, 'from', self.default_values['sender']),
                 'recipient': self._get_recipients(msg),
                 'subject': self._get_header(msg, 'subject', self.default_values['subject']),
@@ -86,6 +93,8 @@ class EmailParser:
 
             return email_data
 
+        except DuplicateEmailError:
+            raise
         except Exception as e:
             logger.error("Failed to parse %s: %s", eml_path, str(e))
             raise
