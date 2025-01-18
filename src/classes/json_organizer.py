@@ -3,7 +3,7 @@ JSON organizer for InboxForge.
 Processes email data into structured JSON format with local attachment handling.
 """
 
-from typing import Dict, TypedDict, List, Optional
+from typing import Dict, TypedDict, List, Optional, Union
 from pathlib import Path
 from datetime import datetime
 import json
@@ -13,25 +13,26 @@ from src.classes.file_handler import FileHandler
 from src.paths import SUMMARY_FILE, EMAIL_IDS_FILE
 from src.types.emails import ProcessedEmail, ProcessingSummary
 
+logger = logging.getLogger(__name__)
+
 class JsonOrganizer:
     """Organizes email data into structured JSON format."""
     
-    def __init__(self, base_dir: Path, exclude_html: bool = True, existing_ids: Optional[set[str]] = None):
+    def __init__(self, data_dir: Union[None, Path, str], exclude_html: bool = True, existing_ids: Optional[set[str]] = None):
         """
         Initialize the JSON organizer.
         
         Args:
-            base_dir: Base directory for storing processed files
+            data_dir: Base directory for storing processed files
             exclude_html: Whether to exclude HTML content
             existing_ids: Optional set of existing email IDs to avoid duplicates
         """
-        self.base_dir = Path(base_dir)
         self.exclude_html = exclude_html
         self.email_ids_file = EMAIL_IDS_FILE
         self.existing_ids = self._load_existing_ids() if existing_ids is None else existing_ids
         self.email_parser = EmailParser(existing_ids=self.existing_ids)
         self.email_ids_file.parent.mkdir(parents=True, exist_ok=True)
-        self.file_handler = FileHandler(self.base_dir)
+        self.file_handler = FileHandler(data_dir)
     
     def process_email(self, eml_path: Path) -> ProcessedEmail:
         """
@@ -61,7 +62,7 @@ class JsonOrganizer:
             with open(self.email_ids_file, 'a') as f:
                 f.write(f"{processed_email['id']}\n")
             
-            logging.debug(
+            logger.debug(
                 "Processed email %s: %s", 
                 processed_email['id'],
                 processed_email['metadata']['subject']
@@ -69,11 +70,11 @@ class JsonOrganizer:
             
             return processed_email
         except DuplicateEmailError:
-            logging.warning("Skipping duplicate email: %s", eml_path.name)
+            logger.warning("Skipping duplicate email: %s", eml_path.name)
             return None
         except Exception as e:
-            logging.error("Failed to process %s: %s", eml_path.name, str(e))
-            logging.debug(
+            logger.error("Failed to process %s: %s", eml_path.name, str(e))
+            logger.debug(
                 "Raw email data structure: %s", 
                 raw_email_data.keys() if 'raw_email_data' in locals() else "Not available"
             )
@@ -86,7 +87,7 @@ class JsonOrganizer:
         if self.exclude_html:
             content = original_body.get('plain', '')
         else:
-            logging.warning("HTML content will be included")
+            logger.warning("HTML content will be included")
             # concatenate plain and html
             content = original_body.get('plain', '') + original_body.get('html', '')
         
@@ -135,7 +136,7 @@ class JsonOrganizer:
             return self._create_default_summary()
                 
         except Exception as e:
-            logging.warning("Could not read summary file: %s", e)
+            logger.warning("Could not read summary file: %s", e)
             return self._create_default_summary()
     
     def _create_default_summary(self) -> ProcessingSummary:
@@ -151,7 +152,7 @@ class JsonOrganizer:
             with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
         except Exception as e:
-            logging.warning("Failed to save default summary: %s", e)
+            logger.warning("Failed to save default summary: %s", e)
             
         return summary
     
@@ -177,7 +178,7 @@ class JsonOrganizer:
                 json.dump(summary, f, indent=2)
                 
         except Exception as e:
-            logging.error("Failed to update summary: %s", e)
+            logger.error("Failed to update summary: %s", e)
 
     def _load_existing_ids(self) -> set[str]:
         """Load existing email IDs from storage."""
@@ -188,7 +189,7 @@ class JsonOrganizer:
             with open(self.email_ids_file, 'r') as f:
                 return set(line.strip() for line in f if line.strip())
         except Exception as e:
-            logging.error("Failed to load existing IDs: %s", e)
+            logger.error("Failed to load existing IDs: %s", e)
             return set()
     
     def get_email_ids(self) -> set[str]:

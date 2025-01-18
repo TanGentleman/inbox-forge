@@ -10,7 +10,7 @@ Converts emails to JSON and builds a search index for fast retrieval. Features i
 
 Usage:
     python -m src.scripts.ingest emails/                  # Basic usage
-    python -m src.scripts.ingest emails/ -o /data/inbox   # Custom output
+    python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
     python -m src.scripts.ingest emails/ --include-html   # Keep HTML
 """
 
@@ -22,7 +22,7 @@ from typing import List, Set, Tuple, Optional
 
 from src.classes.json_organizer import JsonOrganizer
 from src.classes.search_engine import SearchEngine
-from src.paths import EMAIL_IDS_FILE
+from src.paths import DATA_DIR, EMAIL_IDS_FILE
 from src.types.emails import ProcessingSummary
 
 # Configure logging
@@ -96,7 +96,6 @@ def log_processing_results(
     processed_count: int,
     skipped_count: int, 
     error_count: int,
-    base_dir: Path,
     summary: ProcessingSummary
 ) -> None:
     """Log email processing statistics and output locations."""
@@ -109,15 +108,12 @@ def log_processing_results(
     if error_count:
         logger.warning(f"Failed to process: {error_count} emails")
     
-    data_dir = base_dir / 'data'
     logger.info(
-        f"Processed emails: {data_dir / 'processed'}\n"
-        f"Attachments: {data_dir / 'attachments'}\n"
         f"Total emails in system: {summary['total_emails']}\n"
         f"Last updated: {summary['last_updated']}"
     )
 
-def process_folder(input_folder: Path, base_dir: Path, include_html: bool = INCLUDE_HTML) -> None:
+def process_folder(input_folder: Path, data_dir: Optional[Path] = None, include_html: bool = INCLUDE_HTML) -> None:
     """
     Process all emails in a folder.
     
@@ -138,9 +134,16 @@ def process_folder(input_folder: Path, base_dir: Path, include_html: bool = INCL
         f"HTML content will be {'included' if include_html else 'excluded'}"
     )
     
+    if data_dir is not None:
+        index_dir = data_dir / 'search_index'
+        if not index_dir.exists():
+            raise FileNotFoundError(f"Index directory does not exist: {index_dir}")
+    else:
+        index_dir = None # default
+
     # Set up processors
-    json_organizer = JsonOrganizer(base_dir, exclude_html=not include_html, existing_ids=existing_ids)
-    search_engine = SearchEngine(base_dir)
+    json_organizer = JsonOrganizer(data_dir, exclude_html=not include_html, existing_ids=existing_ids)
+    search_engine = SearchEngine(index_dir)
     
     # Process emails
     processed = skipped = errors = 0
@@ -161,7 +164,6 @@ def process_folder(input_folder: Path, base_dir: Path, include_html: bool = INCL
         processed,
         skipped, 
         errors,
-        base_dir,
         json_organizer.get_processing_summary()
     )
 
@@ -173,15 +175,15 @@ def main() -> None:
         epilog="""
 Examples:
   python -m src.scripts.ingest emails/                  # Basic usage
-  python -m src.scripts.ingest emails/ -o /data/inbox   # Custom output
+  python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
   python -m src.scripts.ingest emails/ --include-html   # Keep HTML
 """)
     
     parser.add_argument('folder', help='Folder containing .eml files')
     parser.add_argument(
-        '--output', '-o',
-        help='Output directory (default: current)',
-        default='.'
+        '--data-dir', '-d',
+        help='Data directory (default: auto-detect)',
+        default=None
     )
     parser.add_argument(
         '--include-html',
@@ -194,7 +196,7 @@ Examples:
     try:
         process_folder(
             Path(args.folder),
-            Path(args.output),
+            Path(args.data_dir) if args.data_dir else None,
             include_html=args.include_html
         )
     except Exception as e:

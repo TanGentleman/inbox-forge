@@ -5,7 +5,7 @@ Provides full-text search capabilities across email content and metadata with op
 
 Example usage:
     # Basic search
-    search_engine = SearchEngine(base_dir)
+    search_engine = SearchEngine()
     results = search_engine.search("meeting notes")
     
     # Advanced search with filters
@@ -33,30 +33,15 @@ from src.types.errors import SearchError
 logger = logging.getLogger(__name__)
 
 class SearchEngine:
-    """Email search engine using Whoosh for full-text search."""
+    """Email search engine using Whoosh."""
     
-    # Fields available for searching
-    SEARCHABLE_FIELDS = [
-        'subject',
-        'content', 
-        'sender',
-        'recipient'
-    ]
-    
-    # Maximum search results (None for unlimited)
+    SEARCHABLE_FIELDS = ['subject', 'content', 'sender', 'recipient']
     MAX_RESULTS = None
     
-    def __init__(self, base_dir: Union[str, Path]) -> None:
-        """
-        Initialize the search engine.
-        
-        Args:
-            base_dir: Base directory for the application
-            
-        Raises:
-            SearchError: If index initialization fails
-        """
-        self.index_dir = SEARCH_INDEX_DIR
+    def __init__(self, index_dir: Union[None, str, Path] = None) -> None:
+        """Initialize search engine with optional custom index directory."""
+        self.index_dir = Path(index_dir) if index_dir else SEARCH_INDEX_DIR
+       
         self.schema = Schema(
             id=ID(stored=True, unique=True),
             sender=TEXT(stored=True),
@@ -68,12 +53,7 @@ class SearchEngine:
         self._ensure_index()
     
     def _ensure_index(self) -> None:
-        """
-        Create or load the search index.
-        
-        Raises:
-            SearchError: If index creation/loading fails
-        """
+        """Create or load the search index."""
         try:
             if not self.index_dir.exists():
                 self.index_dir.mkdir(parents=True)
@@ -86,20 +66,16 @@ class SearchEngine:
     
     def index_email(self, email_data: ProcessedEmail) -> None:
         """
-        Add an email to the search index.
+        Add/update email in search index.
         
-        Args:
-            email_data: Processed email data to index
-            
         Raises:
-            ValueError: If required email fields are missing
+            ValueError: If required fields missing
             SearchError: If indexing fails
         """
         self._validate_email_data(email_data)
         
         try:
             writer = self.ix.writer()
-
             writer.update_document(
                 id=email_data['id'],
                 sender=email_data['metadata']['sender'],
@@ -115,7 +91,7 @@ class SearchEngine:
             raise SearchError(f"Failed to index email: {e}")
     
     def _validate_email_data(self, email_data: ProcessedEmail) -> None:
-        """Validate required email fields are present."""
+        """Check required email fields exist."""
         required_fields = ['id', 'metadata', 'content']
         if missing := [f for f in required_fields if f not in email_data]:
             raise ValueError(f"Missing required fields: {', '.join(missing)}")
@@ -127,18 +103,15 @@ class SearchEngine:
         date_range: Optional[Tuple[datetime, datetime]] = None
     ) -> List[Dict]:
         """
-        Search indexed emails with optional filters.
+        Search emails with optional filters.
         
         Args:
-            query: Search query string (empty string returns all emails within date range)
-            fields: Specific fields to search (defaults to all fields)
-            date_range: Optional (start_date, end_date) tuple for filtering
+            query: Search terms (empty matches all)
+            fields: Fields to search (default: all)
+            date_range: Optional (start, end) dates
             
         Returns:
-            List of matching email dictionaries
-            
-        Raises:
-            SearchError: If search fails
+            Matching email documents
         """
         search_fields = fields or self.SEARCHABLE_FIELDS
             
@@ -153,20 +126,17 @@ class SearchEngine:
             raise SearchError(f"Search operation failed: {e}")
             
     def _validate_search_params(self, query: str, fields: Optional[List[str]]) -> None:
-        """Validate search parameters."""
+        """Validate search fields are valid."""
         if fields and (invalid := set(fields) - set(self.SEARCHABLE_FIELDS)):
             raise ValueError(f"Invalid search fields: {', '.join(invalid)}")
             
     def _build_search_query(self, query: str, fields: List[str], date_range: Optional[Tuple[datetime, datetime]]):
-        """Build the search query with filters."""
-        # Start with a query that matches everything
+        """Build query combining text search and date filters."""
         final_query = Every()
 
-        # Add text search if query is not empty
         if query.strip():
             final_query = MultifieldParser(fields, self.ix.schema).parse(query)
         
-        # Add date range filter if provided
         if date_range:
             start_date, end_date = date_range
             if start_date and end_date:

@@ -22,8 +22,17 @@ Supports:
 from pathlib import Path
 import argparse
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional
 from src.classes.search_engine import SearchEngine
+from src.paths import SEARCH_INDEX_DIR
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger(__name__)
 
 def parse_date(date_str: str) -> Optional[datetime]:
     """Parse YYYY-MM-DD date string."""
@@ -43,16 +52,10 @@ def format_result(result: dict) -> str:
         f"ID: {result['id']}"
     )
 
-def verify_index_location(base_dir: Path) -> bool:
+def verify_index_location(index_dir: Path) -> bool:
     """Verify InboxForge directory structure exists."""
-    processed_dir = base_dir / 'data' / 'processed'
-    if not processed_dir.exists():
-        print("\nError: Could not find processed emails directory at:")
-        print(f"{processed_dir}")
-        print("\nPlease ensure:")
-        print("1. You have processed emails using InboxForge first")
-        print("2. You are in the correct directory")
-        print("3. Or specify the correct path using --dir")
+    if index_dir != SEARCH_INDEX_DIR:
+        logger.error(f"Error: Index directory must be {SEARCH_INDEX_DIR}")
         return False
     return True
 
@@ -89,15 +92,15 @@ Examples:
                        type=lambda s: [x.strip() for x in s.split(',')])
     parser.add_argument('--after', help='Start date (YYYY-MM-DD)')
     parser.add_argument('--before', help='End date (YYYY-MM-DD)')
-    parser.add_argument('--dir', '-d', default='.', help='Index directory (default: current)')
+    parser.add_argument('--dir', '-d', help='Index directory (default: auto-detect)')
     
     args = parser.parse_args()
-    base_dir = Path(args.dir)
+    index_dir = Path(args.dir) if args.dir else None
     
-    if not verify_index_location(base_dir):
+    if index_dir and not verify_index_location(index_dir):
         return
         
-    search_engine = SearchEngine(base_dir)
+    search_engine = SearchEngine(index_dir)
     query, detected_fields = parse_query(args.query)
     fields = args.fields if args.fields else detected_fields
     
