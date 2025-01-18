@@ -10,7 +10,7 @@ import json
 import logging
 from src.classes.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
 from src.classes.file_handler import FileHandler
-from src.paths import SUMMARY_FILE
+from src.paths import SUMMARY_FILE, EMAIL_IDS_FILE
 from src.types.emails import ProcessedEmail, ProcessingSummary
 
 class JsonOrganizer:
@@ -27,7 +27,7 @@ class JsonOrganizer:
         """
         self.base_dir = Path(base_dir)
         self.exclude_html = exclude_html
-        self.email_ids_file = self.base_dir / 'data' / 'email_ids.txt'
+        self.email_ids_file = EMAIL_IDS_FILE
         self.existing_ids = self._load_existing_ids() if existing_ids is None else existing_ids
         self.email_parser = EmailParser(existing_ids=self.existing_ids)
         self.email_ids_file.parent.mkdir(parents=True, exist_ok=True)

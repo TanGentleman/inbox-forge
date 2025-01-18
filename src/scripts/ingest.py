@@ -21,6 +21,7 @@ import argparse
 import sys
 import logging
 from typing import Optional
+from paths import EMAIL_IDS_FILE
 from src.classes.json_organizer import JsonOrganizer
 from src.classes.search_engine import SearchEngine
 
@@ -85,11 +86,10 @@ def load_existing_ids(base_dir: Path) -> set[str]:
     Returns:
         Set of existing email IDs
     """
-    ids_file = base_dir / 'data' / 'email_ids.txt'
-    if not ids_file.exists():
+    if not EMAIL_IDS_FILE.exists():
         return set()
         
-    with open(ids_file, 'r') as f:
+    with open(EMAIL_IDS_FILE, 'r') as f:
         return set(line.strip() for line in f if line.strip())
 
 def save_existing_ids(base_dir: Path, email_ids: set[str]) -> None:
@@ -100,10 +100,9 @@ def save_existing_ids(base_dir: Path, email_ids: set[str]) -> None:
         base_dir: Base directory for data storage
         email_ids: Set of email IDs to save
     """
-    ids_file = base_dir / 'data' / 'email_ids.txt'
-    ids_file.parent.mkdir(parents=True, exist_ok=True)
+    EMAIL_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
     
-    with open(ids_file, 'w') as f:
+    with open(EMAIL_IDS_FILE, 'w') as f:
         for email_id in sorted(email_ids):
             f.write(f"{email_id}\n")
 

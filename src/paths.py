@@ -11,3 +11,6 @@ SEARCH_INDEX_DIR = DATA_DIR / 'search_index'
 
 # Summary file path
 SUMMARY_FILE = PROCESSED_DIR / 'email_summary.json'
+
+# Email IDs tracking file
+EMAIL_IDS_FILE = PROCESSED_DIR / 'email_ids.txt'
