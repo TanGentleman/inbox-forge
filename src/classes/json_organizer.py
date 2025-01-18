@@ -3,13 +3,23 @@ JSON organizer for InboxForge.
 Processes email data into structured JSON format with local attachment handling.
 """
 
-from typing import Dict
+from typing import Dict, TypedDict
 from pathlib import Path
 from datetime import datetime
-from classes.email_parser import EmailParser
-from classes.file_handler import FileHandler
 import json
+import logging
+from src.classes.email_parser import EmailParser, ParsedEmail
+from src.classes.file_handler import FileHandler
 from src.paths import SUMMARY_FILE
+
+logger = logging.getLogger(__name__)
+
+class ProcessedEmail(TypedDict):
+    """Schema for processed email data."""
+    id: str
+    metadata: Dict
+    content: Dict
+    attachments: list
 
 class JsonOrganizer:
     """Organizes email data into structured JSON format."""
@@ -27,7 +37,7 @@ class JsonOrganizer:
         self.email_parser = EmailParser()
         self.exclude_html = exclude_html
     
-    def process_email(self, eml_path: Path) -> Dict:
+    def process_email(self, eml_path: Path) -> ProcessedEmail:
         """
         Process an email file into JSON format.
         
@@ -35,58 +45,67 @@ class JsonOrganizer:
             eml_path: Path to the .eml file
             
         Returns:
-            dict: Processed email data
+            ProcessedEmail: Structured email data
+            
+        Raises:
+            IOError: If email file cannot be read
+            ValueError: If email data is invalid
         """
         try:
-            # Parse email
             raw_email_data = self.email_parser.parse_email_file(eml_path)
+            processed_email = self._build_processed_email(raw_email_data, eml_path)
+            self._process_attachments(processed_email, raw_email_data)
             
-            # Process the body content based on HTML preference
-            if self.exclude_html:
-                content = raw_email_data['body'].get('plain', '')
-            else:
-                content = raw_email_data['body']
-            
-            # Create structured email data
-            processed_email = {
-                'id': raw_email_data['id'],
-                'metadata': {
-                    'sender': raw_email_data['sender'],
-                    'recipient': raw_email_data['recipient'],
-                    'subject': raw_email_data['subject'],
-                    'date': raw_email_data['date'],
-                    'original_file': str(eml_path.name),
-                    'processed_date': datetime.now().isoformat()
-                },
-                'content': content,
-                'attachments': []
-            }
-            
-            # Process attachments
-            for attachment in raw_email_data.get('attachments', []):
-                # Save attachment locally
-                location = self.file_handler.save_attachment(
-                    processed_email['id'],
-                    attachment
-                )
-                processed_email['attachments'].append({
-                    'name': attachment['name'],
-                    'type': attachment['type'],
-                    'size': attachment['size'],
-                    'location': location
-                })
-            
-            # Save processed email data
             self.file_handler.save_processed_email(processed_email)
             self._update_summary(processed_email)
+            
+            logger.debug(
+                "Processed email %s: %s", 
+                processed_email['id'],
+                processed_email['metadata']['subject']
+            )
             
             return processed_email
             
         except Exception as e:
-            print(f"\nError processing {eml_path.name}:")
-            print(f"Exception: {str(e)}")
-            print("Raw email data structure:", raw_email_data.keys() if 'raw_email_data' in locals() else "Not available")
+            logger.error("Failed to process %s: %s", eml_path.name, str(e))
+            logger.debug(
+                "Raw email data structure: %s", 
+                raw_email_data.keys() if 'raw_email_data' in locals() else "Not available"
+            )
             raise
+    
+    def _build_processed_email(self, raw_data: ParsedEmail, eml_path: Path) -> ProcessedEmail:
+        """Build processed email structure from raw data."""
+        content = raw_data['body'].get('plain', '') if self.exclude_html else raw_data['body']
+        
+        return {
+            'id': raw_data['id'],
+            'metadata': {
+                'sender': raw_data['sender'],
+                'recipient': raw_data['recipient'], 
+                'subject': raw_data['subject'],
+                'date': raw_data['date'],
+                'original_file': str(eml_path.name),
+                'processed_date': datetime.now().isoformat()
+            },
+            'content': content,
+            'attachments': []
+        }
+    
+    def _process_attachments(self, processed_email: ProcessedEmail, raw_data: ParsedEmail) -> None:
+        """Process and store email attachments."""
+        for attachment in raw_data.get('attachments', []):
+            location = self.file_handler.save_attachment(
+                processed_email['id'],
+                attachment
+            )
+            processed_email['attachments'].append({
+                'name': attachment['name'],
+                'type': attachment['type'],
+                'size': attachment['size'],
+                'location': location
+            })
     
     def get_processing_summary(self) -> Dict:
         """
@@ -99,44 +118,50 @@ class JsonOrganizer:
             if SUMMARY_FILE.exists():
                 with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
                     return json.load(f)
-            else:
-                # Create default summary if it doesn't exist
-                summary = {
-                    'total_emails': 0,
-                    'last_updated': datetime.now().isoformat(),
-                    'emails': []
-                }
-                SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
-                with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
-                    json.dump(summary, f, indent=2)
-                return summary
+                    
+            return self._create_default_summary()
                 
         except Exception as e:
-            print(f"Warning: Could not read summary file: {e}")
-            return {
-                'total_emails': 0,
-                'last_updated': datetime.now().isoformat(),
-                'emails': []
-            }
+            logger.warning("Could not read summary file: %s", e)
+            return self._create_default_summary()
     
-    def _update_summary(self, email_data: Dict) -> None:
+    def _create_default_summary(self) -> Dict:
+        """Create and save default summary structure."""
+        summary = {
+            'total_emails': 0,
+            'last_updated': datetime.now().isoformat(),
+            'emails': []
+        }
+        
+        try:
+            SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
+            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+                json.dump(summary, f, indent=2)
+        except Exception as e:
+            logger.warning("Failed to save default summary: %s", e)
+            
+        return summary
+    
+    def _update_summary(self, email_data: ProcessedEmail) -> None:
         """
         Update the email processing summary.
         
         Args:
             email_data: Processed email data to add to summary
         """
-        summary = self.get_processing_summary()
-        
-        # Add new email to summary
-        summary['total_emails'] += 1
-        summary['last_updated'] = datetime.now().isoformat()
-        summary['emails'].append({
-            'id': email_data['id'],
-            'subject': email_data['metadata']['subject'],
-            'date': email_data['metadata']['date']
-        })
-        
-        # Save updated summary
-        with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
-            json.dump(summary, f, indent=2)
+        try:
+            summary = self.get_processing_summary()
+            
+            summary['total_emails'] += 1
+            summary['last_updated'] = datetime.now().isoformat()
+            summary['emails'].append({
+                'id': email_data['id'],
+                'subject': email_data['metadata']['subject'],
+                'date': email_data['metadata']['date']
+            })
+            
+            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+                json.dump(summary, f, indent=2)
+                
+        except Exception as e:
+            logger.error("Failed to update summary: %s", e)
