@@ -5,15 +5,14 @@ Manages local file operations for attachments and processed data.
 
 import json
 from pathlib import Path
-from typing import Dict, Union, BinaryIO
-import shutil
+from typing import Dict, Union
 from src.paths import ATTACHMENTS_DIR, PROCESSED_DIR
 
 class FileHandler:
     """Handles local file operations for email data and attachments."""
     
     def __init__(self, base_dir: Union[str, Path]):
-        self.base_dir = Path(base_dir)
+        self.base_dir = Path(base_dir).resolve()
         self.attachments_dir = ATTACHMENTS_DIR
         self.processed_dir = PROCESSED_DIR
         self._ensure_directories()
