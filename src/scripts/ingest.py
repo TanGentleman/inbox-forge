@@ -21,7 +21,7 @@ import argparse
 import sys
 import logging
 from typing import Optional
-from paths import EMAIL_IDS_FILE
+from src.paths import EMAIL_IDS_FILE
 from src.classes.json_organizer import JsonOrganizer
 from src.classes.search_engine import SearchEngine
 
