@@ -1,16 +1,12 @@
 """
 Search engine for InboxForge emails using Whoosh.
 
-Provides full-text search capabilities across email content and metadata with optional date filtering.
+Provides full-text search across email content and metadata with optional filters.
 
-Example usage:
-    # Basic search
-    search_engine = SearchEngine()
-    results = search_engine.search("meeting notes")
-
-    # Advanced search with filters
-    results = search_engine.search(
-        query="project update",
+Example:
+    engine = SearchEngine()
+    results = engine.search(
+        query="project update", 
         fields=["subject", "content"],
         date_range=(start_date, end_date)
     )
@@ -19,34 +15,40 @@ Example usage:
 from datetime import datetime
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Union, Literal, Tuple
 
 from whoosh import index
 from whoosh.fields import DATETIME, ID, TEXT, Schema
 from whoosh.qparser import MultifieldParser
 from whoosh.query import And, DateRange, Every
 
+from src.config.settings import DEFAULT_MAX_RESULTS
 from src.core.json_organizer import ProcessedEmail
 from src.config.paths import SEARCH_INDEX_DIR
 from src.types.errors import SearchError
+
+# Type aliases for clarity
+SearchableField = Literal["subject", "content", "sender", "recipient"]
+RequiredField = Literal["id", "metadata", "content"]
+DateRangeFilter = Tuple[Optional[datetime], Optional[datetime]]
 
 logger = logging.getLogger(__name__)
 
 
 class SearchEngine:
-    """Email search engine using Whoosh."""
+    """Email search engine using Whoosh for full-text search with filtering."""
 
-    SEARCHABLE_FIELDS = ['subject', 'content', 'sender', 'recipient']
-    MAX_RESULTS = None
+    SEARCHABLE_FIELDS: List[SearchableField] = ["subject", "content", "sender", "recipient"]
+    REQUIRED_FIELDS_TO_INDEX: List[RequiredField] = ["id", "metadata", "content"]
+    MAX_RESULTS = DEFAULT_MAX_RESULTS
 
     def __init__(self, index_dir: Union[None, str, Path] = None) -> None:
-        """Initialize search engine with optional custom index directory."""
+        """Initialize with optional custom index directory."""
         self.index_dir = Path(index_dir) if index_dir else SEARCH_INDEX_DIR
-
         self.schema = Schema(
             id=ID(stored=True, unique=True),
             sender=TEXT(stored=True),
-            recipient=TEXT(stored=True),
+            recipient=TEXT(stored=True), 
             subject=TEXT(stored=True),
             content=TEXT,
             date=DATETIME(stored=True),
@@ -73,7 +75,8 @@ class SearchEngine:
             ValueError: If required fields missing
             SearchError: If indexing fails
         """
-        self._validate_email_data(email_data)
+        if missing := [f for f in self.REQUIRED_FIELDS_TO_INDEX if f not in email_data]:
+            raise ValueError(f"Missing required fields: {', '.join(missing)}")
 
         try:
             writer = self.ix.writer()
@@ -86,58 +89,54 @@ class SearchEngine:
                 date=datetime.fromisoformat(email_data['metadata']['date']),
             )
             writer.commit()
-
         except Exception as e:
             logger.error('Failed to index email %s: %s', email_data.get('id'), e)
             raise SearchError(f'Failed to index email: {e}')
 
-    def _validate_email_data(self, email_data: ProcessedEmail) -> None:
-        """Check required email fields exist."""
-        required_fields = ['id', 'metadata', 'content']
-        if missing := [f for f in required_fields if f not in email_data]:
-            raise ValueError(f"Missing required fields: {', '.join(missing)}")
-
     def search(
         self,
         query: str,
-        fields: Optional[List[str]] = None,
-        date_range: Optional[Tuple[datetime, datetime]] = None,
+        fields: Optional[List[SearchableField]] = None,
+        date_range: Optional[DateRangeFilter] = None,
+        max_results: Optional[int] = None,
     ) -> List[Dict]:
-        """
-        Search emails with optional filters.
+        """Search emails with optional field and date filters.
 
         Args:
-            query: Search terms (empty matches all)
-            fields: Fields to search (default: all)
-            date_range: Optional (start, end) dates
+            query: Search terms (empty string matches all emails)
+            fields: Optional list of fields to search (defaults to all searchable fields)
+            date_range: Optional tuple of (start_date, end_date) to filter by date
+            max_results: Maximum number of results to return (defaults to self.MAX_RESULTS)
 
         Returns:
-            Matching email documents
+            List of matching email documents
+
+        Raises:
+            ValueError: If invalid search fields specified or max_results < 1
+            SearchError: If search operation fails
         """
-        search_fields = fields or self.SEARCHABLE_FIELDS
+        # Validate max_results
+        result_limit = max_results or self.MAX_RESULTS
+        if result_limit < 1:
+            raise ValueError("max_results must be greater than 0")
+
+        # Validate and prepare search fields
+        search_fields = fields if fields else self.SEARCHABLE_FIELDS
+        invalid_fields = [f for f in search_fields if f not in self.SEARCHABLE_FIELDS]
+        if invalid_fields:
+            raise ValueError(f"Invalid search fields: {', '.join(invalid_fields)}")
 
         try:
             with self.ix.searcher() as searcher:
-                search_query = self._build_search_query(query, search_fields, date_range)
-                results = searcher.search(search_query, limit=self.MAX_RESULTS)
+                query = self._build_query(query, search_fields, date_range)
+                results = searcher.search(query, limit=result_limit)
                 return [dict(result) for result in results]
-
         except Exception as e:
-            logger.error('Search failed: %s', e)
-            raise SearchError(f'Search operation failed: {e}')
+            logger.error("Search failed: %s", e)
+            raise SearchError(f"Search operation failed: {e}")
 
-    def _validate_search_params(self, query: str, fields: Optional[List[str]]) -> None:
-        """Validate search fields are valid."""
-        if fields and (invalid := set(fields) - set(self.SEARCHABLE_FIELDS)):
-            raise ValueError(f"Invalid search fields: {', '.join(invalid)}")
-
-    def _build_search_query(
-        self,
-        query: str,
-        fields: List[str],
-        date_range: Optional[Tuple[datetime, datetime]],
-    ):
-        """Build query combining text search and date filters."""
+    def _build_query(self, query: str, fields: List[SearchableField], date_range: Optional[DateRangeFilter]):
+        """Build combined text and date filter query."""
         final_query = Every()
 
         if query.strip():
@@ -151,7 +150,6 @@ class SearchEngine:
                 date_query = DateRange('date', start_date, None)
             elif end_date:
                 date_query = DateRange('date', None, end_date)
-
             final_query = And([final_query, date_query])
 
         return final_query
