@@ -20,6 +20,7 @@ import sys
 from pathlib import Path
 from typing import List, Set, Tuple, Optional
 
+from config.settings import INCLUDE_HTML
 from src.core.json_organizer import JsonOrganizer
 from src.core.search_engine import SearchEngine
 from src.config.paths import EMAIL_IDS_FILE
@@ -32,8 +33,6 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
 )
 logger = logging.getLogger(__name__)
-
-INCLUDE_HTML = False  # Default HTML handling setting
 
 
 def find_email_files(input_folder: Path) -> List[Path]:
