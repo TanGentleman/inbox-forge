@@ -24,7 +24,7 @@ import argparse
 from datetime import datetime
 from typing import Optional
 from core.search_engine import SearchEngine
-from src.paths import SEARCH_INDEX_DIR
+from config.paths import SEARCH_INDEX_DIR
 import logging
 
 logging.basicConfig(

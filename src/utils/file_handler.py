@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Union
-from src.paths import DATA_DIR
+from config.paths import DATA_DIR
 
 logger = logging.getLogger(__name__)
 

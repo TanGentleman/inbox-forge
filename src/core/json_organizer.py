@@ -10,7 +10,7 @@ import json
 import logging
 from core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
 from utils.file_handler import FileHandler
-from src.paths import SUMMARY_FILE, EMAIL_IDS_FILE
+from config.paths import SUMMARY_FILE, EMAIL_IDS_FILE
 from src.types.emails import ProcessedEmail, ProcessingSummary
 
 logger = logging.getLogger(__name__)

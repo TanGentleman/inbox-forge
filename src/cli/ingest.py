@@ -22,7 +22,7 @@ from typing import List, Set, Tuple, Optional
 
 from core.json_organizer import JsonOrganizer
 from core.search_engine import SearchEngine
-from src.paths import EMAIL_IDS_FILE
+from config.paths import EMAIL_IDS_FILE
 from src.types.emails import ProcessingSummary
 
 # Configure logging
