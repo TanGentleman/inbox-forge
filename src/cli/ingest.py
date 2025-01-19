@@ -20,8 +20,8 @@ import sys
 from pathlib import Path
 from typing import List, Set, Tuple, Optional
 
-from src.classes.json_organizer import JsonOrganizer
-from src.classes.search_engine import SearchEngine
+from core.json_organizer import JsonOrganizer
+from core.search_engine import SearchEngine
 from src.paths import EMAIL_IDS_FILE
 from src.types.emails import ProcessingSummary
 

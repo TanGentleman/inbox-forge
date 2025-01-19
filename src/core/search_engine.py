@@ -26,7 +26,7 @@ from whoosh.fields import DATETIME, ID, TEXT, Schema
 from whoosh.qparser import MultifieldParser
 from whoosh.query import And, DateRange, Every
 
-from src.classes.json_organizer import ProcessedEmail
+from core.json_organizer import ProcessedEmail
 from src.paths import SEARCH_INDEX_DIR
 from src.types.errors import SearchError
 
