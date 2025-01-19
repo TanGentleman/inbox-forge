@@ -20,9 +20,9 @@ import sys
 from pathlib import Path
 from typing import List, Set, Tuple, Optional
 
-from core.json_organizer import JsonOrganizer
-from core.search_engine import SearchEngine
-from config.paths import EMAIL_IDS_FILE
+from src.core.json_organizer import JsonOrganizer
+from src.core.search_engine import SearchEngine
+from src.config.paths import EMAIL_IDS_FILE
 from src.types.emails import ProcessingSummary
 
 # Configure logging

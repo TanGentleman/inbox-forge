@@ -23,8 +23,8 @@ from pathlib import Path
 import argparse
 from datetime import datetime
 from typing import Optional
-from core.search_engine import SearchEngine
-from config.paths import SEARCH_INDEX_DIR
+from src.core.search_engine import SearchEngine
+from src.config.paths import SEARCH_INDEX_DIR
 import logging
 
 logging.basicConfig(
