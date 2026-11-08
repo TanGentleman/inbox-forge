@@ -54,6 +54,7 @@ log-heavy error handling that swallows failures.
   `inbox-forge` is not on PATH in a clone), plus query and exit-code tables.
 - `inbox-forge-6`: `search` exits 2 (bad usage) instead of 0 after printing the error for an invalid
   `--after`/`--before` date or `--in` field; subprocess tests for both.
+- `inbox-forge-7`: README cut to 26 words; details moved to IMPLEMENTATION.md.
 
 `inbox-forge-x-mbox` is a side branch (mbox input) that you may drop; it is not part of this stack.
 
@@ -63,7 +64,7 @@ log-heavy error handling that swallows failures.
 # in kranti-sandbox
 git fetch origin
 base=$(git log -1 --format=%H --grep='^Import inbox-forge upstream' origin/inbox-forge-1)
-git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-6 -o /tmp/inbox-forge
+git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-7 -o /tmp/inbox-forge
 # in a clean upstream clone at ffdfe27
 git am /tmp/inbox-forge/*.patch
 uv sync --locked && uv run pytest && uv run ruff check && uv run ruff format --check
