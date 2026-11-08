@@ -41,8 +41,8 @@ log-heavy error handling that swallows failures.
 
 ## Stack
 
-- `inbox-forge-1`: import, the five fixes above, offline pytest suite on fixture emails, this file.
-- `inbox-forge-2`: installable package `inbox_forge` with an `inbox-forge` CLI, data dir
+- `inbox-forge-1` (done): import, the five fixes above, offline pytest suite on fixture emails, this file.
+- `inbox-forge-2` (done): installable package `inbox_forge` with an `inbox-forge` CLI, data dir
   defaults to `./data`, PEP 621 + uv.lock, ruff, GitHub Actions on 3.10-3.14.
 - `inbox-forge-3`: cut dead code and USAGE.md; README a stranger gets in 30 seconds.
 - `inbox-forge-4`: replace whoosh with SQLite FTS5 from the standard library (zero
@@ -61,7 +61,8 @@ python -m venv .venv && .venv/bin/pip install whoosh==2.7.4 pytest
 .venv/bin/python -m pytest -q
 ```
 
-For a stacked branch, use the previous branch as the base: `inbox-forge-1..inbox-forge-2`.
+For a stacked branch, use the previous branch as the base: `inbox-forge-1..inbox-forge-2`,
+and apply the stack in order. From `-2` on, test with `uv sync --locked && uv run pytest -q`.
 If `git am` rejects a hunk over line endings, retry with `git am --keep-cr`.
 
 ## Needs Tan
