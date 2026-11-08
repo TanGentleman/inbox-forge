@@ -10,6 +10,7 @@ from email import policy
 from email.message import EmailMessage
 from email.parser import BytesParser
 from email.utils import parsedate_to_datetime
+from html.parser import HTMLParser
 from pathlib import Path
 
 from inbox_forge.types.emails import EmailAttachment, EmailBody, ParsedEmail
@@ -134,7 +135,7 @@ class EmailParser:
 
     def _get_body(self, msg: EmailMessage) -> EmailBody:
         """Extract plain text and HTML body content."""
-        body = {'plain': self.default_values['body'], 'html': None}
+        body = {'plain': None, 'html': None}
 
         try:
             if msg.is_multipart():
@@ -144,9 +145,9 @@ class EmailParser:
             else:
                 self._extract_text_content(msg, body)
 
-            # Ensure plain text exists
-            if not body['plain'] and body['html']:
-                body['plain'] = 'This email contains HTML content only.'
+            if not body['plain']:
+                text = html_to_text(body['html']) if body['html'] else ''
+                body['plain'] = text or self.default_values['body']
 
             return body
 
@@ -188,3 +189,30 @@ class EmailParser:
             logger.warning('Failed to extract attachments: %s', e)
 
         return attachments
+
+
+class _TextExtractor(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.chunks: list[str] = []
+        self.skip = 0
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ('script', 'style'):
+            self.skip += 1
+
+    def handle_endtag(self, tag):
+        if tag in ('script', 'style') and self.skip:
+            self.skip -= 1
+
+    def handle_data(self, data):
+        if not self.skip:
+            self.chunks.append(data)
+
+
+def html_to_text(html: str) -> str:
+    """Visible text of an HTML document, whitespace collapsed."""
+    parser = _TextExtractor()
+    parser.feed(html)
+    parser.close()
+    return ' '.join(' '.join(parser.chunks).split())

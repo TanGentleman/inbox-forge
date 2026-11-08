@@ -32,3 +32,34 @@ def test_missing_headers_get_defaults(tmp_path):
     assert email['subject'] == '[No Subject]'
     assert email['sender'] == '[No Sender]'
     assert email['recipient'] == ['[No Recipients]']
+
+
+HTML_ONLY = b"""From: Dana <dana@example.org>
+To: alice@example.com
+Subject: Team offsite
+Date: Mon, 02 Sep 2024 09:30:00 +0200
+MIME-Version: 1.0
+Content-Type: text/html; charset=utf-8
+
+<html><head><style>p { color: red; }</style></head>
+<body><p>The <b>offsite</b> is in Lisbon this year.</p><script>track()</script></body></html>
+"""
+
+
+def test_html_only_email_gets_plain_text(tmp_path):
+    eml = tmp_path / 'invite.eml'
+    eml.write_bytes(HTML_ONLY)
+    email = EmailParser().parse_email_file(eml)
+    assert email['body']['plain'] == 'The offsite is in Lisbon this year.'
+    assert '<b>offsite</b>' in email['body']['html']
+
+
+def test_html_only_email_is_searchable(tmp_path):
+    from inbox_forge.cli.ingest import process_folder
+    from inbox_forge.core.search_engine import SearchEngine
+
+    (tmp_path / 'mail').mkdir()
+    (tmp_path / 'mail' / 'invite.eml').write_bytes(HTML_ONLY)
+    process_folder(tmp_path / 'mail', tmp_path / 'inbox')
+    results = SearchEngine(tmp_path / 'inbox' / 'search_index').search('lisbon')
+    assert [r['subject'] for r in results] == ['Team offsite']
