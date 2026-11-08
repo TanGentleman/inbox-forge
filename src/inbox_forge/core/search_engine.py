@@ -22,10 +22,10 @@ from whoosh.fields import DATETIME, ID, TEXT, Schema
 from whoosh.qparser import MultifieldParser
 from whoosh.query import And, DateRange, Every
 
-from src.config.settings import DEFAULT_MAX_RESULTS
-from src.core.json_organizer import ProcessedEmail
-from src.config.paths import SEARCH_INDEX_DIR
-from src.types.errors import SearchError
+from inbox_forge.config.settings import DEFAULT_MAX_RESULTS
+from inbox_forge.core.json_organizer import ProcessedEmail
+from inbox_forge.config.paths import SEARCH_INDEX_DIR
+from inbox_forge.types.errors import SearchError
 
 # Type aliases for clarity
 SearchableField = Literal["subject", "content", "sender", "recipient"]

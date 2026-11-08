@@ -22,33 +22,39 @@ InboxForge is a powerful tool for processing `.eml` files into an organized JSON
 
 ## Basic Usage
 
+### Installing
+
+```bash
+pip install git+https://github.com/TanGentleman/inbox-forge
+```
+
 ### Processing Emails
 
 To process a folder of `.eml` files, use the following command:
 
 ```bash
-python -m src.cli.ingest /path/to/email/folder
+inbox-forge ingest /path/to/email/folder
 ```
 
 #### Options
-- `--data-dir` or `-d`: Data directory for the index and processed files (default: `data/` in the repo).
+- `--data-dir` or `-d`: Data directory for the index and processed files (default: `data/` in the current directory).
 - `--include-html`: Keep HTML content in the processed output (excluded by default).
 
 #### Examples
 
 1. Process emails with default settings:
    ```bash
-   python -m src.cli.ingest ./my_emails
+   inbox-forge ingest ./my_emails
    ```
 
 2. Specify a custom data directory:
    ```bash
-   python -m src.cli.ingest ./my_emails --data-dir ./processed_data
+   inbox-forge ingest ./my_emails --data-dir ./processed_data
    ```
 
 3. Keep HTML content:
    ```bash
-   python -m src.cli.ingest ./my_emails --include-html
+   inbox-forge ingest ./my_emails --include-html
    ```
 
 ---
@@ -73,17 +79,17 @@ data/
 From the command line:
 
 ```bash
-python -m src.cli.search "important meeting"
-python -m src.cli.search "from:john@example.com"
-python -m src.cli.search "report" --in subject,content --after 2024-01-01
-python -m src.cli.search "report" --data-dir ./processed_data
+inbox-forge search "important meeting"
+inbox-forge search "from:john@example.com"
+inbox-forge search "report" --in subject,content --after 2024-01-01
+inbox-forge search "report" --data-dir ./processed_data
 ```
 
 Or from Python:
 
 ```python
 from pathlib import Path
-from src.core.search_engine import SearchEngine
+from inbox_forge.core.search_engine import SearchEngine
 
 # Initialize search engine
 search_engine = SearchEngine(Path('data/search_index'))
@@ -158,7 +164,7 @@ If you encounter errors, follow these steps:
 ## Requirements
 
 - **Python**: 3.10 or higher.
-- **Required Packages**:
+- **Required Packages** (installed automatically):
   - `whoosh` (for search functionality).
 
 ---

@@ -1,4 +1,4 @@
-from src.core.email_parser import EmailParser
+from inbox_forge.core.email_parser import EmailParser
 
 
 def test_parses_plain_email(mail_dir):

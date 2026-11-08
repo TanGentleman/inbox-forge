@@ -9,9 +9,9 @@ Converts emails to JSON and builds a search index for fast retrieval. Features i
 - Optional HTML preservation
 
 Usage:
-    python -m src.cli.ingest emails/                  # Basic usage
-    python -m src.cli.ingest emails/ -d /data/inbox   # Custom data dir
-    python -m src.cli.ingest emails/ --include-html   # Keep HTML
+    inbox-forge ingest emails/                  # Basic usage
+    inbox-forge ingest emails/ -d /data/inbox   # Custom data dir
+    inbox-forge ingest emails/ --include-html   # Keep HTML
 """
 
 import argparse
@@ -20,10 +20,10 @@ import sys
 from pathlib import Path
 from typing import List, Tuple, Optional
 
-from src.config.settings import INCLUDE_HTML
-from src.core.json_organizer import JsonOrganizer
-from src.core.search_engine import SearchEngine
-from src.types.emails import ProcessingSummary
+from inbox_forge.config.settings import INCLUDE_HTML
+from inbox_forge.core.json_organizer import JsonOrganizer
+from inbox_forge.core.search_engine import SearchEngine
+from inbox_forge.types.emails import ProcessingSummary
 
 # Configure logging
 logging.basicConfig(
@@ -143,16 +143,17 @@ def process_folder(
     log_processing_results(processed, skipped, errors, json_organizer.get_processing_summary())
 
 
-def main() -> None:
+def main(argv: Optional[List[str]] = None) -> None:
     """Parse command line arguments and run email processing."""
     parser = argparse.ArgumentParser(
+        prog='inbox-forge ingest',
         description='Import email files (.eml) into a searchable format.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.cli.ingest emails/                  # Basic usage
-  python -m src.cli.ingest emails/ -d /data/inbox   # Custom data dir
-  python -m src.cli.ingest emails/ --include-html   # Keep HTML
+  inbox-forge ingest emails/                  # Basic usage
+  inbox-forge ingest emails/ -d /data/inbox   # Custom data dir
+  inbox-forge ingest emails/ --include-html   # Keep HTML
 """,
     )
 
@@ -162,7 +163,7 @@ Examples:
     )
     parser.add_argument('--include-html', action='store_true', help='Preserve HTML content')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     try:
         process_folder(

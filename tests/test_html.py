@@ -1,6 +1,6 @@
 import json
 
-from src.cli.ingest import process_folder
+from inbox_forge.cli.ingest import process_folder
 
 
 def load_processed(data_dir):

@@ -1,8 +1,8 @@
 import json
 import shutil
 
-from src.cli.ingest import process_folder
-from src.utils.file_handler import FileHandler
+from inbox_forge.cli.ingest import process_folder
+from inbox_forge.utils.file_handler import FileHandler
 
 
 def total_emails(data_dir):

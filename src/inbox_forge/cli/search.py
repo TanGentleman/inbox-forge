@@ -3,14 +3,14 @@ Command-line interface for searching InboxForge emails.
 
 Usage:
     # Basic search
-    python -m src.cli.search "important meeting"
+    inbox-forge search "important meeting"
 
     # Search by field
-    python -m src.cli.search "from:john@example.com"
-    python -m src.cli.search "project report" --in subject,content
+    inbox-forge search "from:john@example.com"
+    inbox-forge search "project report" --in subject,content
 
     # Filter by date
-    python -m src.cli.search "meeting" --after 2024-01-01 --before 2024-03-01
+    inbox-forge search "meeting" --after 2024-01-01 --before 2024-03-01
 
 Supports:
     - Field prefixes: from:, to:, subject:
@@ -23,7 +23,7 @@ from pathlib import Path
 import argparse
 from datetime import datetime
 from typing import Optional
-from src.core.search_engine import SearchEngine
+from inbox_forge.core.search_engine import SearchEngine
 import logging
 
 logging.basicConfig(
@@ -71,16 +71,17 @@ def parse_query(query: str) -> tuple[str, list]:
     return query.strip(), fields
 
 
-def main():
+def main(argv: Optional[list] = None) -> None:
     parser = argparse.ArgumentParser(
+        prog='inbox-forge search',
         description='Search through InboxForge emails.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.cli.search "important meeting"              # Search all fields
-  python -m src.cli.search "from:john@example.com"         # Search by sender
-  python -m src.cli.search "meeting" --in subject,content     # Search specific fields
-  python -m src.cli.search "report" --after 2024-01-01     # Filter by date
+  inbox-forge search "important meeting"              # Search all fields
+  inbox-forge search "from:john@example.com"         # Search by sender
+  inbox-forge search "meeting" --in subject,content     # Search specific fields
+  inbox-forge search "report" --after 2024-01-01     # Filter by date
 """,
     )
 
@@ -99,7 +100,7 @@ Examples:
         '--data-dir', '-d', '--dir', dest='data_dir', help='Data directory (default: data/)'
     )
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     search_engine = SearchEngine(Path(args.data_dir) / 'search_index' if args.data_dir else None)
     query, detected_fields = parse_query(args.query)
     fields = args.fields if args.fields else detected_fields

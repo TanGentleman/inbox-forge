@@ -7,7 +7,7 @@ import json
 import logging
 from pathlib import Path
 from typing import Dict, Union
-from src.config.paths import DATA_DIR
+from inbox_forge.config.paths import DATA_DIR
 
 logger = logging.getLogger(__name__)
 

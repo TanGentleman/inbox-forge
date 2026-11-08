@@ -13,8 +13,8 @@ from typing import List, Optional, Union
 import hashlib
 import logging
 
-from src.types.emails import ParsedEmail, EmailBody, EmailAttachment
-from src.types.errors import DuplicateEmailError
+from inbox_forge.types.emails import ParsedEmail, EmailBody, EmailAttachment
+from inbox_forge.types.errors import DuplicateEmailError
 
 logger = logging.getLogger(__name__)
 

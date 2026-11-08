@@ -8,9 +8,9 @@ from pathlib import Path
 from datetime import datetime
 import json
 import logging
-from src.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
-from src.utils.file_handler import FileHandler
-from src.types.emails import ProcessedEmail, ProcessingSummary
+from inbox_forge.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
+from inbox_forge.utils.file_handler import FileHandler
+from inbox_forge.types.emails import ProcessedEmail, ProcessingSummary
 
 logger = logging.getLogger(__name__)
 
