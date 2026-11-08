@@ -45,8 +45,9 @@ log-heavy error handling that swallows failures.
 - `inbox-forge-2` (done): installable package `inbox_forge` with an `inbox-forge` CLI, data dir
   defaults to `./data`, PEP 621 + uv.lock, ruff, GitHub Actions on 3.10-3.14.
 - `inbox-forge-3` (done): cut dead code and USAGE.md; README a stranger gets in 30 seconds.
-- `inbox-forge-4`: replace whoosh with SQLite FTS5 from the standard library (zero
-  dependencies); HTML-only emails indexed as text.
+- `inbox-forge-4` (done): replace whoosh with SQLite FTS5 from the standard library (no
+  runtime dependencies; a new index fills itself from `processed/`); HTML-only emails
+  indexed as text; bodies decoded with their declared charset.
 
 ## Apply a branch upstream
 
@@ -65,8 +66,26 @@ For a stacked branch, use the previous branch as the base: `inbox-forge-1..inbox
 and apply the stack in order. From `-2` on, test with `uv sync --locked && uv run pytest -q`.
 If `git am` rejects a hunk over line endings, retry with `git am --keep-cr`.
 
+## Stack verification (2026-11-08)
+
+Each branch was applied with `git format-patch` + `git am` (in stack order) to a fresh clone
+at ffdfe27; the tree matched the branch and the tests passed: 11 on `-1` (pip + whoosh),
+11 on `-2` and `-3`, 43 on `-4` (`uv sync --locked && uv run pytest`), plus ruff and the
+README commands. `-2` was also run on Python 3.10-3.14 and installed from a built wheel.
+
 ## Needs Tan
 
+- `-4` drops Whoosh for SQLite FTS5. The 26 search tests were written against Whoosh first
+  and pass on both. An upstream data dir was upgraded in place (index rebuilt from
+  `processed/`); old Whoosh files are left in `search_index/`. Python builds without FTS5
+  (rare) would fail with a SearchError.
+- `-2` renames the package to `inbox_forge`: `python -m src.cli.*` becomes
+  `inbox-forge ingest|search`, and the default data dir is `./data` in the current
+  directory instead of `<checkout>/data`.
+- The README's `pip install git+https://github.com/TanGentleman/inbox-forge` only works once
+  `-2` is upstream; it was checked by installing a locally built wheel.
+- CI (`.github/workflows/ci.yml`) passed actionlint and its steps were run locally; it has
+  not run on GitHub.
 - `search --dir` now means the data dir (same as `ingest -d`), not the index dir. It only
   ever accepted `data/search_index`, so no working command changes meaning except that one.
 - Nothing was tested against a real mail export; only the fixture emails here.
