@@ -9,9 +9,9 @@ Converts emails to JSON and builds a search index for fast retrieval. Features i
 - Optional HTML preservation
 
 Usage:
-    python -m src.scripts.ingest emails/                  # Basic usage
-    python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
-    python -m src.scripts.ingest emails/ --include-html   # Keep HTML
+    python -m src.cli.ingest emails/                  # Basic usage
+    python -m src.cli.ingest emails/ -d /data/inbox   # Custom data dir
+    python -m src.cli.ingest emails/ --include-html   # Keep HTML
 """
 
 import argparse
@@ -150,9 +150,9 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.scripts.ingest emails/                  # Basic usage
-  python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
-  python -m src.scripts.ingest emails/ --include-html   # Keep HTML
+  python -m src.cli.ingest emails/                  # Basic usage
+  python -m src.cli.ingest emails/ -d /data/inbox   # Custom data dir
+  python -m src.cli.ingest emails/ --include-html   # Keep HTML
 """,
     )
 

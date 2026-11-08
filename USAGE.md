@@ -27,42 +27,41 @@ InboxForge is a powerful tool for processing `.eml` files into an organized JSON
 To process a folder of `.eml` files, use the following command:
 
 ```bash
-python -m src.main /path/to/email/folder
+python -m src.cli.ingest /path/to/email/folder
 ```
 
 #### Options
-- `--output` or `-o`: Specify the output directory (default: current directory).
-- `--exclude-html`: Exclude HTML content from the processed output.
+- `--data-dir` or `-d`: Data directory for the index and processed files (default: `data/` in the repo).
+- `--include-html`: Keep HTML content in the processed output (excluded by default).
 
 #### Examples
 
 1. Process emails with default settings:
    ```bash
-   python -m src.main ./my_emails
+   python -m src.cli.ingest ./my_emails
    ```
 
-2. Specify a custom output directory:
+2. Specify a custom data directory:
    ```bash
-   python -m src.main ./my_emails --output ./processed_data
+   python -m src.cli.ingest ./my_emails --data-dir ./processed_data
    ```
 
-3. Process emails without HTML content:
+3. Keep HTML content:
    ```bash
-   python -m src.main ./my_emails --exclude-html
+   python -m src.cli.ingest ./my_emails --include-html
    ```
 
 ---
 
 ### Output Structure
 
-After processing, the output directory will be organized as follows:
+After processing, the data directory is organized as follows:
 
 ```
-output_directory/
-├── data/
-│   ├── processed/       # Contains processed email JSON files
-│   ├── attachments/     # Contains extracted email attachments
-│   └── search_index/    # Contains search index files
+data/
+├── processed/       # Processed email JSON, email_ids.txt, email_summary.json
+├── attachments/     # Extracted email attachments
+└── search_index/    # Search index files
 ```
 
 ---
@@ -71,22 +70,31 @@ output_directory/
 
 ### Using the Search Engine
 
-You can search through processed emails using Python code:
+From the command line:
+
+```bash
+python -m src.cli.search "important meeting"
+python -m src.cli.search "from:john@example.com"
+python -m src.cli.search "report" --in subject,content --after 2024-01-01
+python -m src.cli.search "report" --data-dir ./processed_data
+```
+
+Or from Python:
 
 ```python
 from pathlib import Path
-from src.scripts.search_engine import SearchEngine
+from src.core.search_engine import SearchEngine
 
 # Initialize search engine
-search_engine = SearchEngine(Path('./output_directory'))
+search_engine = SearchEngine(Path('data/search_index'))
 
-# Basic search across all fields (subject, body, sender, recipient)
+# Basic search across all fields (subject, content, sender, recipient)
 results = search_engine.search("important meeting")
 
 # Search in specific fields
 results = search_engine.search(
     "john@example.com",
-    fields=['sender', 'recipient']
+    fields=['sender', 'recipient'],
 )
 
 # Search with a date range
@@ -115,7 +123,7 @@ Search results are returned as a list of dictionaries containing:
 
 1. **Indexed Fields**: The search engine indexes the following fields:
    - Subject
-   - Body (both plain text and HTML)
+   - Content (plain text, plus HTML with `--include-html`)
    - Sender
    - Recipient
 
@@ -149,7 +157,7 @@ If you encounter errors, follow these steps:
 
 ## Requirements
 
-- **Python**: 3.11 or higher.
+- **Python**: 3.10 or higher.
 - **Required Packages**:
   - `whoosh` (for search functionality).
 

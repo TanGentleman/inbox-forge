@@ -3,14 +3,14 @@ Command-line interface for searching InboxForge emails.
 
 Usage:
     # Basic search
-    python -m src.scripts.search "important meeting"
+    python -m src.cli.search "important meeting"
 
     # Search by field
-    python -m src.scripts.search "from:john@example.com"
-    python -m src.scripts.search "project report" --in subject,content
+    python -m src.cli.search "from:john@example.com"
+    python -m src.cli.search "project report" --in subject,content
 
     # Filter by date
-    python -m src.scripts.search "meeting" --after 2024-01-01 --before 2024-03-01
+    python -m src.cli.search "meeting" --after 2024-01-01 --before 2024-03-01
 
 Supports:
     - Field prefixes: from:, to:, subject:
@@ -77,10 +77,10 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.scripts.search "important meeting"              # Search all fields
-  python -m src.scripts.search "from:john@example.com"         # Search by sender
-  python -m src.scripts.search "meeting" --in subject,content     # Search specific fields
-  python -m src.scripts.search "report" --after 2024-01-01     # Filter by date
+  python -m src.cli.search "important meeting"              # Search all fields
+  python -m src.cli.search "from:john@example.com"         # Search by sender
+  python -m src.cli.search "meeting" --in subject,content     # Search specific fields
+  python -m src.cli.search "report" --after 2024-01-01     # Filter by date
 """,
     )
 
