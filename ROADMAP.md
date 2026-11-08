@@ -44,7 +44,7 @@ log-heavy error handling that swallows failures.
 - `inbox-forge-1` (done): import, the five fixes above, offline pytest suite on fixture emails, this file.
 - `inbox-forge-2` (done): installable package `inbox_forge` with an `inbox-forge` CLI, data dir
   defaults to `./data`, PEP 621 + uv.lock, ruff, GitHub Actions on 3.10-3.14.
-- `inbox-forge-3`: cut dead code and USAGE.md; README a stranger gets in 30 seconds.
+- `inbox-forge-3` (done): cut dead code and USAGE.md; README a stranger gets in 30 seconds.
 - `inbox-forge-4`: replace whoosh with SQLite FTS5 from the standard library (zero
   dependencies); HTML-only emails indexed as text.
 
