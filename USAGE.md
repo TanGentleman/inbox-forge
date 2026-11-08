@@ -95,22 +95,19 @@ from inbox_forge.core.search_engine import SearchEngine
 search_engine = SearchEngine(Path('data/search_index'))
 
 # Basic search across all fields (subject, content, sender, recipient)
-results = search_engine.search("important meeting")
+results = search_engine.search('important meeting')
 
 # Search in specific fields
 results = search_engine.search(
-    "john@example.com",
+    'john@example.com',
     fields=['sender', 'recipient'],
 )
 
 # Search with a date range
 from datetime import datetime
+
 results = search_engine.search(
-    "quarterly report",
-    date_range=(
-        datetime(2023, 1, 1),
-        datetime(2023, 12, 31)
-    )
+    'quarterly report', date_range=(datetime(2023, 1, 1), datetime(2023, 12, 31))
 )
 ```
 
