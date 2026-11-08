@@ -63,3 +63,22 @@ def test_html_only_email_is_searchable(tmp_path):
     process_folder(tmp_path / 'mail', tmp_path / 'inbox')
     results = SearchEngine(tmp_path / 'inbox' / 'search_index').search('lisbon')
     assert [r['subject'] for r in results] == ['Team offsite']
+
+
+def test_body_uses_declared_charset(tmp_path):
+    eml = tmp_path / 'cp1252.eml'
+    eml.write_bytes(
+        b'From: a@example.com\nSubject: cp1252\n'
+        b'Content-Type: text/plain; charset=windows-1252\n'
+        b'Content-Transfer-Encoding: 8bit\n\nCaf\xe9 \x96 r\xe9sum\xe9\n'
+    )
+    assert EmailParser().parse_email_file(eml)['body']['plain'].strip() == 'Café – résumé'
+
+
+def test_unknown_charset_falls_back_to_latin1(tmp_path):
+    eml = tmp_path / 'bogus.eml'
+    eml.write_bytes(
+        b'From: a@example.com\nSubject: bogus\n'
+        b'Content-Type: text/plain; charset=x-not-a-charset\n\nCaf\xe9\n'
+    )
+    assert EmailParser().parse_email_file(eml)['body']['plain'].strip() == 'Café'

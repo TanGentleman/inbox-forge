@@ -157,10 +157,11 @@ class EmailParser:
 
     def _extract_text_content(self, part: EmailMessage, body: EmailBody) -> None:
         """Extract text content from a message part."""
+        payload = part.get_payload(decode=True)
         try:
-            content = part.get_payload(decode=True).decode()
-        except UnicodeDecodeError:
-            content = part.get_payload(decode=True).decode('latin-1')
+            content = payload.decode(part.get_content_charset() or 'utf-8')
+        except (LookupError, UnicodeDecodeError):
+            content = payload.decode('latin-1')
 
         if part.get_content_subtype() == 'plain':
             body['plain'] = content
