@@ -58,21 +58,6 @@ log-heavy error handling that swallows failures.
 
 `inbox-forge-x-mbox` is a side branch (mbox input) that you may drop; it is not part of this stack.
 
-## Apply upstream
-
-```bash
-# in kranti-sandbox
-git fetch origin
-base=$(git log -1 --format=%H --grep='^Import inbox-forge upstream' origin/inbox-forge-1)
-git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-7 -o /tmp/inbox-forge
-# in a clean upstream clone at ffdfe27
-git am /tmp/inbox-forge/*.patch
-uv sync --locked && uv run pytest && uv run ruff check && uv run ruff format --check
-```
-
-For one branch, use `origin/inbox-forge-(N-1)..origin/inbox-forge-N`. `-1` alone still uses
-Whoosh: test it with `pip install whoosh==2.7.4 pytest && python -m pytest`.
-
 ## Needs Tan
 
 - `-4` drops Whoosh for SQLite FTS5. An upstream data dir is upgraded in place (index rebuilt from
