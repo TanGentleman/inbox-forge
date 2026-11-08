@@ -37,7 +37,7 @@ class EmailParser:
             'recipients': ['[No Recipients]'],
             'body': '[Could not extract email body]',
         }
-        self.existing_ids = existing_ids or set()
+        self.existing_ids = existing_ids if existing_ids is not None else set()
 
     def _generate_email_id(self, content: bytes) -> str:
         """
@@ -74,7 +74,6 @@ class EmailParser:
                 logger.debug('Duplicate email detected: %s', email_id)
                 raise DuplicateEmailError(f'Email with ID {email_id} already exists')
 
-            self.existing_ids.add(email_id)
             msg = self.parser.parsebytes(content)
 
             email_data = {
