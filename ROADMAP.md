@@ -77,9 +77,9 @@ README commands. `-2` and `-4` also pass on Python 3.10-3.14 (SQLite 3.37 and 3.
 ## Needs Tan
 
 - `-4` drops Whoosh for SQLite FTS5. The 26 search tests from `-3` were written against Whoosh
-  first and pass on both; `-4` adds two FTS5-only ones (28 in `test_search.py`). An upstream data dir was upgraded in place (index rebuilt from
-  `processed/`); old Whoosh files are left in `search_index/`. Python builds without FTS5
-  (rare) would fail with a SearchError.
+  first and pass on both; `-4` adds two FTS5-only ones (28 in `test_search.py`). An upstream
+  data dir was upgraded in place (index rebuilt from `processed/`); old Whoosh files are left
+  in `search_index/`. Python builds without FTS5 (rare) would fail with a SearchError.
 - `-2` renames the package to `inbox_forge`: `python -m src.cli.*` becomes
   `inbox-forge ingest|search`, and the default data dir is `./data` in the current
   directory instead of `<checkout>/data`.
