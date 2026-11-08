@@ -58,11 +58,11 @@ class SearchEngine:
     def _ensure_index(self) -> None:
         """Create or load the search index."""
         try:
-            if not self.index_dir.exists():
-                self.index_dir.mkdir(parents=True)
-                self.ix = index.create_in(str(self.index_dir), self.schema)
-            else:
+            self.index_dir.mkdir(parents=True, exist_ok=True)
+            if index.exists_in(str(self.index_dir)):
                 self.ix = index.open_dir(str(self.index_dir))
+            else:
+                self.ix = index.create_in(str(self.index_dir), self.schema)
         except Exception as e:
             logger.error('Failed to initialize index: %s', e)
             raise SearchError(f'Index initialization failed: {e}')

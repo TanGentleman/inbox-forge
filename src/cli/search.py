@@ -16,7 +16,7 @@ Supports:
     - Field prefixes: from:, to:, subject:
     - Field filtering: --in subject,content,sender,recipient
     - Date filtering: --after/--before YYYY-MM-DD
-    - Custom index location: --dir PATH
+    - Custom data directory: --data-dir PATH
 """
 
 from pathlib import Path
@@ -24,7 +24,6 @@ import argparse
 from datetime import datetime
 from typing import Optional
 from src.core.search_engine import SearchEngine
-from src.config.paths import SEARCH_INDEX_DIR
 import logging
 
 logging.basicConfig(
@@ -53,14 +52,6 @@ def format_result(result: dict) -> str:
         f"Subject: {result['subject']}\n"
         f"ID: {result['id']}"
     )
-
-
-def verify_index_location(index_dir: Path) -> bool:
-    """Verify InboxForge directory structure exists."""
-    if index_dir != SEARCH_INDEX_DIR:
-        logger.error(f'Error: Index directory must be {SEARCH_INDEX_DIR}')
-        return False
-    return True
 
 
 def parse_query(query: str) -> tuple[str, list]:
@@ -104,15 +95,12 @@ Examples:
     )
     parser.add_argument('--after', help='Start date (YYYY-MM-DD)')
     parser.add_argument('--before', help='End date (YYYY-MM-DD)')
-    parser.add_argument('--dir', '-d', help='Index directory (default: auto-detect)')
+    parser.add_argument(
+        '--data-dir', '-d', '--dir', dest='data_dir', help='Data directory (default: data/)'
+    )
 
     args = parser.parse_args()
-    index_dir = Path(args.dir) if args.dir else None
-
-    if index_dir and not verify_index_location(index_dir):
-        return
-
-    search_engine = SearchEngine(index_dir)
+    search_engine = SearchEngine(Path(args.data_dir) / 'search_index' if args.data_dir else None)
     query, detected_fields = parse_query(args.query)
     fields = args.fields if args.fields else detected_fields
 

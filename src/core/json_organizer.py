@@ -10,7 +10,6 @@ import json
 import logging
 from src.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
 from src.utils.file_handler import FileHandler
-from src.config.paths import SUMMARY_FILE, EMAIL_IDS_FILE
 from src.types.emails import ProcessedEmail, ProcessingSummary
 
 logger = logging.getLogger(__name__)
@@ -34,11 +33,11 @@ class JsonOrganizer:
             existing_ids: Optional set of existing email IDs to avoid duplicates
         """
         self.exclude_html = exclude_html
-        self.email_ids_file = EMAIL_IDS_FILE
+        self.file_handler = FileHandler(data_dir)
+        self.email_ids_file = self.file_handler.processed_dir / 'email_ids.txt'
+        self.summary_file = self.file_handler.processed_dir / 'email_summary.json'
         self.existing_ids = self._load_existing_ids() if existing_ids is None else existing_ids
         self.email_parser = EmailParser(existing_ids=self.existing_ids)
-        self.email_ids_file.parent.mkdir(parents=True, exist_ok=True)
-        self.file_handler = FileHandler(data_dir)
 
     def process_email(self, eml_path: Path) -> ProcessedEmail:
         """
@@ -134,8 +133,8 @@ class JsonOrganizer:
             ProcessingSummary: Summary information including total emails and last updated
         """
         try:
-            if SUMMARY_FILE.exists():
-                with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
+            if self.summary_file.exists():
+                with open(self.summary_file, 'r', encoding='utf-8') as f:
                     return json.load(f)
 
             return self._create_default_summary()
@@ -153,8 +152,8 @@ class JsonOrganizer:
         }
 
         try:
-            SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+            self.summary_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.summary_file, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
         except Exception as e:
             logger.warning(f'Failed to save default summary: {e}')
@@ -181,7 +180,7 @@ class JsonOrganizer:
                 }
             )
 
-            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+            with open(self.summary_file, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
 
         except Exception as e:

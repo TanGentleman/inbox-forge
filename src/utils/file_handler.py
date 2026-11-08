@@ -47,14 +47,7 @@ class FileHandler:
         Raises:
             FileNotFoundError: If directory is invalid or inaccessible
         """
-        if not data_dir:
-            return DATA_DIR
-
-        path = Path(data_dir)
-        if not path.exists() and path.name == 'data':
-            raise FileNotFoundError(f'Invalid data directory: {path}')
-
-        return path
+        return Path(data_dir) if data_dir else DATA_DIR
 
     def _ensure_directories(self) -> None:
         """Create necessary directories if they don't exist."""

@@ -18,12 +18,11 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple, Optional
+from typing import List, Tuple, Optional
 
 from src.config.settings import INCLUDE_HTML
 from src.core.json_organizer import JsonOrganizer
 from src.core.search_engine import SearchEngine
-from src.config.paths import EMAIL_IDS_FILE
 from src.types.emails import ProcessingSummary
 
 # Configure logging
@@ -58,22 +57,6 @@ def validate_email_files(email_files: List[Path], input_folder: Path) -> bool:
         '3. Are readable by the current user'
     )
     return False
-
-
-def load_existing_ids() -> Set[str]:
-    """Load previously processed email IDs from tracking file."""
-    if not EMAIL_IDS_FILE.exists():
-        return set()
-
-    with open(EMAIL_IDS_FILE) as f:
-        return {line.strip() for line in f if line.strip()}
-
-
-def save_existing_ids(email_ids: Set[str]) -> None:
-    """Save processed email IDs to tracking file."""
-    EMAIL_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(EMAIL_IDS_FILE, 'w') as f:
-        f.writelines(f'{id}\n' for id in sorted(email_ids))
 
 
 def process_single_email(
@@ -133,28 +116,16 @@ def process_folder(
     ):
         return
 
-    # Initialize processing
-    existing_ids = load_existing_ids()
+    # Set up processors
+    json_organizer = JsonOrganizer(data_dir, exclude_html=not include_html)
+    search_engine = SearchEngine(data_dir / 'search_index' if data_dir else None)
     total_emails = len(email_files)
 
     logger.info(
-        f"Found {len(existing_ids)} existing emails\n"
+        f"Found {len(json_organizer.get_email_ids())} existing emails\n"
         f"Found {total_emails} new emails to process\n"
         f"HTML content will be {'included' if include_html else 'excluded'}"
     )
-
-    if data_dir is not None:
-        index_dir = data_dir / 'search_index'
-        if not index_dir.exists():
-            raise FileNotFoundError(f'Index directory does not exist: {index_dir}')
-    else:
-        index_dir = None  # default
-
-    # Set up processors
-    json_organizer = JsonOrganizer(
-        data_dir, exclude_html=not include_html, existing_ids=existing_ids
-    )
-    search_engine = SearchEngine(index_dir)
 
     # Process emails
     processed = skipped = errors = 0
@@ -169,8 +140,6 @@ def process_folder(
         else:
             errors += 1
 
-    # Save results
-    save_existing_ids(json_organizer.get_email_ids())
     log_processing_results(processed, skipped, errors, json_organizer.get_processing_summary())
 
 
