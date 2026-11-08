@@ -93,3 +93,18 @@ def test_reindexing_an_email_replaces_it(engine, data_dir):
 )
 def test_parse_query(raw, query, fields):
     assert parse_query(raw) == (query, fields)
+
+
+def test_malformed_query_falls_back_to_plain_words(engine):
+    assert subjects(engine.search('NOT')) == []
+    assert subjects(engine.search('OR lunch')) == [LUNCH]
+    assert subjects(engine.search('"grab lunch')) == [LUNCH]
+
+
+def test_new_index_is_built_from_processed_emails(engine, data_dir):
+    import shutil
+
+    shutil.rmtree(data_dir / 'search_index')
+    (data_dir / 'search_index').mkdir()
+    (data_dir / 'search_index' / '_MAIN_1.toc').write_bytes(b'old whoosh file')
+    assert subjects(SearchEngine(data_dir / 'search_index').search('')) == [LUNCH, REPORT]

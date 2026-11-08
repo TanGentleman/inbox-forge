@@ -6,7 +6,7 @@ authors = [{ name = "Tanuj", email = "Tanuj@cmu.edu" }]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["whoosh>=2.7.4"]
+dependencies = []
 
 [project.scripts]
 inbox-forge = "inbox_forge.__main__:main"
@@ -26,7 +26,6 @@ quote-style = "single"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-filterwarnings = ["ignore::SyntaxWarning"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

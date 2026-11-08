@@ -10,7 +10,8 @@ attachments, and builds a local full-text index. No mail account, IMAP or API ke
 pip install git+https://github.com/TanGentleman/inbox-forge
 ```
 
-Python 3.10 or newer.
+Python 3.10 or newer, with SQLite FTS5 (included in python.org, uv and most Linux
+builds). No other dependencies.
 
 ## Try it
 
@@ -52,7 +53,7 @@ folder.
 data/
 ├── processed/     # <id>.json per email, email_ids.txt, email_summary.json
 ├── attachments/   # <id>/<filename>
-└── search_index/  # Whoosh index
+└── search_index/  # SQLite FTS5 index (emails.sqlite3)
 ```
 
 From Python:
