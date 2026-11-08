@@ -51,9 +51,9 @@ so you can re-run it on a growing folder; an email that failed is retried next t
 
 | Exit code | When |
 | --- | --- |
-| 0 | done, including "No matching emails found." and an invalid date or `--in` field (an error is printed) |
+| 0 | done, including "No matching emails found." |
 | 1 | `ingest` folder does not exist, or ingest failed |
-| 2 | bad usage (no command, unknown command, missing argument) |
+| 2 | bad usage (no command, unknown command, missing argument), or an invalid `search` date or `--in` field (an error is printed) |
 
 ## Data directory
 

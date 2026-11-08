@@ -26,7 +26,10 @@ def inbox_forge(*args, cwd):
         (['ingest'], 2, ''),
         (['ingest', 'missing'], 1, ''),
         (['search'], 2, ''),
-        (['search', 'x', '--after', '2024-13-01'], 0, 'Invalid date format'),
+        (['search', 'x', '--after', '2024-13-01'], 2, 'Invalid date format'),
+        (['search', 'x', '--before', 'yesterday'], 2, 'Invalid date format'),
+        (['search', 'x', '--in', 'body'], 2, 'Invalid search fields: body'),
+        (['search', 'x', '--in', 'subject,body'], 2, 'Invalid search fields: body'),
         (['search', 'anything'], 0, 'No matching emails found.'),
     ],
 )

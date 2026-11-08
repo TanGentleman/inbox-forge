@@ -21,6 +21,7 @@ Supports:
 
 import argparse
 import logging
+import sys
 from datetime import datetime
 from pathlib import Path
 
@@ -112,14 +113,14 @@ Examples:
         if (args.after and not start_date) or (args.before and not end_date):
             print('\nError: Invalid date format. Use YYYY-MM-DD')
             print('Example: --after 2024-01-01 --before 2024-12-31')
-            return
+            sys.exit(2)
         date_range = (start_date, end_date)
 
     try:
         results = search_engine.search(query=query, fields=fields, date_range=date_range)
     except ValueError as e:
         print(f'\nError: {str(e)}')
-        return
+        sys.exit(2)
 
     if not results:
         print('\nNo matching emails found.')
