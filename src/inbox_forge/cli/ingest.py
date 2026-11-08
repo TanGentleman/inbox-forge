@@ -19,7 +19,6 @@ import logging
 import sys
 from pathlib import Path
 
-from inbox_forge.config.settings import INCLUDE_HTML
 from inbox_forge.core.json_organizer import JsonOrganizer
 from inbox_forge.core.search_engine import SearchEngine
 from inbox_forge.types.emails import ProcessingSummary
@@ -102,7 +101,7 @@ def log_processing_results(
 def process_folder(
     input_folder: Path,
     data_dir: Path | None = None,
-    include_html: bool = INCLUDE_HTML,
+    include_html: bool = False,
 ) -> None:
     """
     Process all emails in a folder.

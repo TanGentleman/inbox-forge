@@ -7,9 +7,9 @@ import json
 import logging
 from pathlib import Path
 
-from inbox_forge.config.paths import DATA_DIR
-
 logger = logging.getLogger(__name__)
+
+DATA_DIR = Path('data')
 
 
 class FileHandler:
@@ -99,29 +99,4 @@ class FileHandler:
                 json.dump(email_data, f, indent=2, ensure_ascii=False)
         except OSError as e:
             logger.error(f'Failed to save email data {email_data["id"]}: {e}')
-            raise
-
-    def get_processed_email(self, email_id: str) -> dict:
-        """
-        Retrieve processed email data.
-
-        Args:
-            email_id: Unique identifier for the email
-
-        Returns:
-            dict: Email data
-
-        Raises:
-            FileNotFoundError: If email data file does not exist
-            IOError: If email data cannot be read
-        """
-        json_path = self.processed_dir / f'{email_id}.json'
-        if not json_path.exists():
-            raise FileNotFoundError(f'Email data not found: {email_id}')
-
-        try:
-            with open(json_path, encoding='utf-8') as f:
-                return json.load(f)
-        except OSError as e:
-            logger.error(f'Failed to read email data {email_id}: {e}')
             raise

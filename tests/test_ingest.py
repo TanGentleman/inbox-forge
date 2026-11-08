@@ -3,8 +3,8 @@ import sys
 
 from inbox_forge.cli import search as search_cli
 from inbox_forge.cli.ingest import process_folder
-from inbox_forge.config.paths import DATA_DIR
 from inbox_forge.core.search_engine import SearchEngine
+from inbox_forge.utils.file_handler import DATA_DIR
 
 
 def test_custom_data_dir_holds_everything(mail_dir, data_dir):

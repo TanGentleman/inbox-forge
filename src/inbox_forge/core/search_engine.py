@@ -22,10 +22,9 @@ from whoosh.fields import DATETIME, ID, TEXT, Schema
 from whoosh.qparser import MultifieldParser
 from whoosh.query import And, DateRange, Every
 
-from inbox_forge.config.paths import SEARCH_INDEX_DIR
-from inbox_forge.config.settings import DEFAULT_MAX_RESULTS
 from inbox_forge.core.json_organizer import ProcessedEmail
 from inbox_forge.types.errors import SearchError
+from inbox_forge.utils.file_handler import DATA_DIR
 
 # Type aliases for clarity
 SearchableField = Literal['subject', 'content', 'sender', 'recipient']
@@ -40,11 +39,11 @@ class SearchEngine:
 
     SEARCHABLE_FIELDS: list[SearchableField] = ['subject', 'content', 'sender', 'recipient']
     REQUIRED_FIELDS_TO_INDEX: list[RequiredField] = ['id', 'metadata', 'content']
-    MAX_RESULTS = DEFAULT_MAX_RESULTS
+    MAX_RESULTS = 100
 
     def __init__(self, index_dir: None | str | Path = None) -> None:
         """Initialize with optional custom index directory."""
-        self.index_dir = Path(index_dir) if index_dir else SEARCH_INDEX_DIR
+        self.index_dir = Path(index_dir) if index_dir else DATA_DIR / 'search_index'
         self.schema = Schema(
             id=ID(stored=True, unique=True),
             sender=TEXT(stored=True),
