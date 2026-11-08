@@ -115,8 +115,8 @@ class EmailParser:
         recipients = []
         try:
             for field in ['to', 'cc', 'bcc']:
-                if value := msg.get(field):
-                    recipients.extend(addr.strip() for addr in value.split(','))
+                for header in msg.get_all(field, []):
+                    recipients.extend(str(addr) for addr in header.addresses)
             return recipients or self.default_values['recipients']
         except Exception as e:
             logger.warning('Failed to get recipients: %s', e)
