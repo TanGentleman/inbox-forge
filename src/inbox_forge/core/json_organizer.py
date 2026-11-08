@@ -3,14 +3,14 @@ JSON organizer for InboxForge.
 Processes email data into structured JSON format with local attachment handling.
 """
 
-from typing import Optional, Union
-from pathlib import Path
-from datetime import datetime
 import json
 import logging
+from datetime import datetime
+from pathlib import Path
+
 from inbox_forge.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
-from inbox_forge.utils.file_handler import FileHandler
 from inbox_forge.types.emails import ProcessedEmail, ProcessingSummary
+from inbox_forge.utils.file_handler import FileHandler
 
 logger = logging.getLogger(__name__)
 
@@ -20,9 +20,9 @@ class JsonOrganizer:
 
     def __init__(
         self,
-        data_dir: Union[None, Path, str],
+        data_dir: None | Path | str,
         exclude_html: bool = True,
-        existing_ids: Optional[set[str]] = None,
+        existing_ids: set[str] | None = None,
     ):
         """
         Initialize the JSON organizer.
@@ -65,7 +65,7 @@ class JsonOrganizer:
             self._track_email_id(processed_email['id'])
 
             logger.debug(
-                f"Processed email {processed_email['id']}: {processed_email['metadata']['subject']}"
+                f'Processed email {processed_email["id"]}: {processed_email["metadata"]["subject"]}'
             )
             return processed_email
 
@@ -75,7 +75,7 @@ class JsonOrganizer:
         except Exception as e:
             logger.error(f'Failed to process {eml_path.name}: {str(e)}')
             logger.debug(
-                f'Raw email data structure: {raw_email_data.keys() if raw_email_data else "Not available"}'
+                'Raw email data keys: %s', list(raw_email_data) if raw_email_data else None
             )
             raise
 
@@ -90,7 +90,7 @@ class JsonOrganizer:
         body = raw_data['body']
         content = body.get('plain') or ''
         if not self.exclude_html and body.get('html'):
-            content = f"{content}\n{body['html']}"
+            content = f'{content}\n{body["html"]}'
         content = content.strip()
 
         return {
@@ -129,7 +129,7 @@ class JsonOrganizer:
         """
         try:
             if self.summary_file.exists():
-                with open(self.summary_file, 'r', encoding='utf-8') as f:
+                with open(self.summary_file, encoding='utf-8') as f:
                     return json.load(f)
 
             return self._create_default_summary()
@@ -187,7 +187,7 @@ class JsonOrganizer:
             return set()
 
         try:
-            with open(self.email_ids_file, 'r') as f:
+            with open(self.email_ids_file) as f:
                 return set(line.strip() for line in f if line.strip())
         except Exception as e:
             logger.error(f'Failed to load existing IDs: {e}')

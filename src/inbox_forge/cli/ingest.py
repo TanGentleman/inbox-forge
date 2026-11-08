@@ -18,7 +18,6 @@ import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Tuple, Optional
 
 from inbox_forge.config.settings import INCLUDE_HTML
 from inbox_forge.core.json_organizer import JsonOrganizer
@@ -34,7 +33,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def find_email_files(input_folder: Path) -> List[Path]:
+def find_email_files(input_folder: Path) -> list[Path]:
     """Find all .eml files in input folder recursively."""
     if not input_folder.exists():
         logger.error(f'Input folder not found: {input_folder}')
@@ -44,7 +43,7 @@ def find_email_files(input_folder: Path) -> List[Path]:
     return sorted(input_folder.glob('**/*.eml'))
 
 
-def validate_email_files(email_files: List[Path], input_folder: Path) -> bool:
+def validate_email_files(email_files: list[Path], input_folder: Path) -> bool:
     """Check if valid email files exist and provide guidance if not."""
     if email_files:
         return True
@@ -61,7 +60,7 @@ def validate_email_files(email_files: List[Path], input_folder: Path) -> bool:
 
 def process_single_email(
     eml_file: Path, json_organizer: JsonOrganizer, search_engine: SearchEngine
-) -> Tuple[bool, bool]:
+) -> tuple[bool, bool]:
     """
     Process a single email file.
 
@@ -95,14 +94,14 @@ def log_processing_results(
         logger.warning(f'Failed to process: {error_count} emails')
 
     logger.info(
-        f"Total emails in system: {summary['total_emails']}\n"
-        f"Last updated: {summary['last_updated']}"
+        f'Total emails in system: {summary["total_emails"]}\n'
+        f'Last updated: {summary["last_updated"]}'
     )
 
 
 def process_folder(
     input_folder: Path,
-    data_dir: Optional[Path] = None,
+    data_dir: Path | None = None,
     include_html: bool = INCLUDE_HTML,
 ) -> None:
     """
@@ -122,9 +121,9 @@ def process_folder(
     total_emails = len(email_files)
 
     logger.info(
-        f"Found {len(json_organizer.get_email_ids())} existing emails\n"
-        f"Found {total_emails} new emails to process\n"
-        f"HTML content will be {'included' if include_html else 'excluded'}"
+        f'Found {len(json_organizer.get_email_ids())} existing emails\n'
+        f'Found {total_emails} new emails to process\n'
+        f'HTML content will be {"included" if include_html else "excluded"}'
     )
 
     # Process emails
@@ -143,7 +142,7 @@ def process_folder(
     log_processing_results(processed, skipped, errors, json_organizer.get_processing_summary())
 
 
-def main(argv: Optional[List[str]] = None) -> None:
+def main(argv: list[str] | None = None) -> None:
     """Parse command line arguments and run email processing."""
     parser = argparse.ArgumentParser(
         prog='inbox-forge ingest',

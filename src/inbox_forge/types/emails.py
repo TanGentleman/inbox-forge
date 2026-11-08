@@ -1,11 +1,11 @@
-from typing import TypedDict, List, Optional
+from typing import TypedDict
 
 
 class EmailBody(TypedDict):
     """Email body content in plain text and optional HTML."""
 
     plain: str
-    html: Optional[str]
+    html: str | None
 
 
 class EmailAttachment(TypedDict):
@@ -23,18 +23,18 @@ class ParsedEmail(TypedDict):
 
     id: str
     sender: str
-    recipient: List[str]
+    recipient: list[str]
     subject: str
     date: str
     body: EmailBody
-    attachments: List[EmailAttachment]
+    attachments: list[EmailAttachment]
 
 
 class EmailMetadata(TypedDict):
     """Schema for email metadata."""
 
     sender: str
-    recipient: List[str]
+    recipient: list[str]
     subject: str
     date: str
     original_file: str
@@ -48,7 +48,7 @@ class ProcessedEmail(TypedDict):
     id: str
     metadata: EmailMetadata
     content: str
-    attachments: List[EmailAttachment]
+    attachments: list[EmailAttachment]
 
 
 class SummaryEmail(TypedDict):
@@ -64,4 +64,4 @@ class ProcessingSummary(TypedDict):
 
     total_emails: int
     last_updated: str
-    emails: List[SummaryEmail]
+    emails: list[SummaryEmail]

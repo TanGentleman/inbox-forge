@@ -27,3 +27,6 @@ quote-style = "single"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 filterwarnings = ["ignore::SyntaxWarning"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

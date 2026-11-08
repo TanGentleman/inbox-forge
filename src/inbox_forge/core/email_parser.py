@@ -3,17 +3,16 @@ Email parser utility for InboxForge.
 Parses .eml files into structured data with metadata, content and attachments.
 """
 
-from email.message import EmailMessage
-from email import policy
-from email.parser import BytesParser
-from email.utils import parsedate_to_datetime
-from datetime import datetime
-from pathlib import Path
-from typing import List, Optional, Union
 import hashlib
 import logging
+from datetime import datetime
+from email import policy
+from email.message import EmailMessage
+from email.parser import BytesParser
+from email.utils import parsedate_to_datetime
+from pathlib import Path
 
-from inbox_forge.types.emails import ParsedEmail, EmailBody, EmailAttachment
+from inbox_forge.types.emails import EmailAttachment, EmailBody, ParsedEmail
 from inbox_forge.types.errors import DuplicateEmailError
 
 logger = logging.getLogger(__name__)
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 class EmailParser:
     """Parses .eml files into structured data."""
 
-    def __init__(self, existing_ids: Optional[set[str]] = None):
+    def __init__(self, existing_ids: set[str] | None = None):
         """
         Initialize with default values and email parser.
 
@@ -51,7 +50,7 @@ class EmailParser:
         """
         return hashlib.sha256(content).hexdigest()[:16]
 
-    def parse_email_file(self, eml_path: Union[str, Path]) -> ParsedEmail:
+    def parse_email_file(self, eml_path: str | Path) -> ParsedEmail:
         """
         Parse an .eml file into structured data.
 
@@ -110,7 +109,7 @@ class EmailParser:
             logger.warning('Failed to get %s: %s', header, e)
             return default
 
-    def _get_recipients(self, msg: EmailMessage) -> List[str]:
+    def _get_recipients(self, msg: EmailMessage) -> list[str]:
         """Extract all recipient addresses from To, CC and BCC fields."""
         recipients = []
         try:
@@ -122,7 +121,7 @@ class EmailParser:
             logger.warning('Failed to get recipients: %s', e)
             return self.default_values['recipients']
 
-    def _get_date(self, date_str: Optional[str]) -> str:
+    def _get_date(self, date_str: str | None) -> str:
         """Convert email date to ISO format."""
         if not date_str:
             return self.default_date
@@ -169,7 +168,7 @@ class EmailParser:
         else:
             logger.warning('Unhandled content type: %s', part.get_content_type())
 
-    def _get_attachments(self, msg: EmailMessage) -> List[EmailAttachment]:
+    def _get_attachments(self, msg: EmailMessage) -> list[EmailAttachment]:
         """Extract all email attachments."""
         attachments = []
 

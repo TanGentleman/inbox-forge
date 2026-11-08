@@ -19,12 +19,12 @@ Supports:
     - Custom data directory: --data-dir PATH
 """
 
-from pathlib import Path
 import argparse
-from datetime import datetime
-from typing import Optional
-from inbox_forge.core.search_engine import SearchEngine
 import logging
+from datetime import datetime
+from pathlib import Path
+
+from inbox_forge.core.search_engine import SearchEngine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def parse_date(date_str: str) -> Optional[datetime]:
+def parse_date(date_str: str) -> datetime | None:
     """Parse YYYY-MM-DD date string."""
     try:
         return datetime.strptime(date_str, '%Y-%m-%d')
@@ -46,11 +46,11 @@ def format_result(result: dict) -> str:
     """Format search result for display."""
     date = result['date'].strftime('%Y-%m-%d %H:%M')
     return (
-        f"\nDate: {date}\n"
-        f"From: {result['sender']}\n"
-        f"To: {result['recipient']}\n"
-        f"Subject: {result['subject']}\n"
-        f"ID: {result['id']}"
+        f'\nDate: {date}\n'
+        f'From: {result["sender"]}\n'
+        f'To: {result["recipient"]}\n'
+        f'Subject: {result["subject"]}\n'
+        f'ID: {result["id"]}'
     )
 
 
@@ -71,7 +71,7 @@ def parse_query(query: str) -> tuple[str, list]:
     return query.strip(), fields
 
 
-def main(argv: Optional[list] = None) -> None:
+def main(argv: list | None = None) -> None:
     parser = argparse.ArgumentParser(
         prog='inbox-forge search',
         description='Search through InboxForge emails.',
