@@ -87,16 +87,11 @@ class JsonOrganizer:
 
     def _build_processed_email(self, raw_data: ParsedEmail, eml_path: Path) -> ProcessedEmail:
         """Build processed email structure from raw data."""
-        original_body = raw_data['body']
-        content = ''
-        if self.exclude_html:
-            content = original_body.get('plain', '')
-        else:
-            logger.warning('HTML content will be included')
-            # concatenate plain and html
-            content = original_body.get('plain', '') + original_body.get('html', '')
-
-        content = str(content).strip()
+        body = raw_data['body']
+        content = body.get('plain') or ''
+        if not self.exclude_html and body.get('html'):
+            content = f"{content}\n{body['html']}"
+        content = content.strip()
 
         return {
             'id': raw_data['id'],
