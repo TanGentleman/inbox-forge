@@ -52,6 +52,8 @@ log-heavy error handling that swallows failures.
   setup-uv v10.3.3 by SHA, uv 0.13.7 and ubuntu-24.04, and runs the README searches. Subprocess
   tests for CLI exit codes and the quick start. README quick start runs through `uv run` (a bare
   `inbox-forge` is not on PATH in a clone), plus query and exit-code tables.
+- `inbox-forge-6`: `search` exits 2 (bad usage) instead of 0 after printing the error for an invalid
+  `--after`/`--before` date or `--in` field; subprocess tests for both.
 
 `inbox-forge-x-mbox` is a side branch (mbox input) that you may drop; it is not part of this stack.
 
@@ -61,7 +63,7 @@ log-heavy error handling that swallows failures.
 # in kranti-sandbox
 git fetch origin
 base=$(git log -1 --format=%H --grep='^Import inbox-forge upstream' origin/inbox-forge-1)
-git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-5 -o /tmp/inbox-forge
+git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-6 -o /tmp/inbox-forge
 # in a clean upstream clone at ffdfe27
 git am /tmp/inbox-forge/*.patch
 uv sync --locked && uv run pytest && uv run ruff check && uv run ruff format --check
@@ -80,8 +82,8 @@ Whoosh: test it with `pip install whoosh==2.7.4 pytest && python -m pytest`.
   directory instead of `<checkout>/data`.
 - `search --dir` now means the data dir (same as `ingest -d`), not the index dir. It only
   ever accepted `data/search_index`, so no working command changes meaning except that one.
-- `search` exits 0 after printing an error for a bad date or `--in` field. Kept as is (no behavior
-  changes in `-5`); say if it should exit non-zero.
+- `-6` makes `search` exit 2 for an invalid date or `--in` field (it exited 0). The error text and
+  stream (stdout) are unchanged; scripts that relied on exit 0 there will see 2.
 - Not verified: `pip install git+https://github.com/TanGentleman/inbox-forge` (works only once
   `-2` is upstream; checked with a locally built wheel), CI on GitHub (its commands were run
   locally), and any real mail export (only fixture and synthetic emails).
