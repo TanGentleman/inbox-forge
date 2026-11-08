@@ -53,8 +53,8 @@ log-heavy error handling that swallows failures.
 
 ```bash
 # in kranti-sandbox: everything after the import commit
-base=$(git log -1 --format=%H --grep='^Import inbox-forge upstream' inbox-forge-1)
-git format-patch --relative=inbox-forge "$base"..inbox-forge-1 -o /tmp/inbox-forge-1
+base=$(git log -1 --format=%H --grep='^Import inbox-forge upstream' origin/inbox-forge-1)
+git format-patch --relative=inbox-forge "$base"..origin/inbox-forge-1 -o /tmp/inbox-forge-1
 # in a clean upstream clone at ffdfe27
 git clone https://github.com/TanGentleman/inbox-forge && cd inbox-forge
 git am /tmp/inbox-forge-1/*.patch
@@ -62,7 +62,7 @@ python -m venv .venv && .venv/bin/pip install whoosh==2.7.4 pytest
 .venv/bin/python -m pytest -q
 ```
 
-For a stacked branch, use the previous branch as the base: `inbox-forge-1..inbox-forge-2`,
+For a stacked branch, use the previous branch as the base: `origin/inbox-forge-1..origin/inbox-forge-2`,
 and apply the stack in order. From `-2` on, test with `uv sync --locked && uv run pytest -q`.
 If `git am` rejects a hunk over line endings, retry with `git am --keep-cr`.
 
@@ -76,8 +76,8 @@ README commands. `-2` and `-4` also pass on Python 3.10-3.14 (SQLite 3.37 and 3.
 
 ## Needs Tan
 
-- `-4` drops Whoosh for SQLite FTS5. The 26 search tests were written against Whoosh first
-  and pass on both. An upstream data dir was upgraded in place (index rebuilt from
+- `-4` drops Whoosh for SQLite FTS5. The 26 search tests from `-3` were written against Whoosh
+  first and pass on both; `-4` adds two FTS5-only ones (28 in `test_search.py`). An upstream data dir was upgraded in place (index rebuilt from
   `processed/`); old Whoosh files are left in `search_index/`. Python builds without FTS5
   (rare) would fail with a SearchError.
 - `-2` renames the package to `inbox_forge`: `python -m src.cli.*` becomes
