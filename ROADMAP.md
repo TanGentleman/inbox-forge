@@ -71,7 +71,8 @@ If `git am` rejects a hunk over line endings, retry with `git am --keep-cr`.
 Each branch was applied with `git format-patch` + `git am` (in stack order) to a fresh clone
 at ffdfe27; the tree matched the branch and the tests passed: 11 on `-1` (pip + whoosh),
 11 on `-2` and `-3`, 43 on `-4` (`uv sync --locked && uv run pytest`), plus ruff and the
-README commands. `-2` was also run on Python 3.10-3.14 and installed from a built wheel.
+README commands. `-2` and `-4` also pass on Python 3.10-3.14 (SQLite 3.37 and 3.53);
+`-2` was installed from a built wheel.
 
 ## Needs Tan
 
