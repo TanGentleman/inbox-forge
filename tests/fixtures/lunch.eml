@@ -1,0 +1,26 @@
+From: Bob <bob@example.com>
+To: alice@example.com
+Subject: Lunch on Friday
+Date: Wed, 10 Jul 2024 12:00:00 +0000
+Message-ID: <lunch@example.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="outer"
+
+--outer
+Content-Type: multipart/alternative; boundary="inner"
+
+--inner
+Content-Type: text/plain; charset=utf-8
+
+Want to grab lunch on Friday? Menu attached.
+--inner
+Content-Type: text/html; charset=utf-8
+
+<p>Want to grab <b>lunch</b> on Friday? Menu attached.</p>
+--inner--
+--outer
+Content-Type: text/plain; name="menu.txt"
+Content-Disposition: attachment; filename="menu.txt"
+
+Tacos
+--outer--

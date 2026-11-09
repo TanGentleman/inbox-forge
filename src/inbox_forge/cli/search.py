@@ -3,29 +3,29 @@ Command-line interface for searching InboxForge emails.
 
 Usage:
     # Basic search
-    python -m src.scripts.search "important meeting"
+    inbox-forge search "important meeting"
 
     # Search by field
-    python -m src.scripts.search "from:john@example.com"
-    python -m src.scripts.search "project report" --in subject,content
+    inbox-forge search "from:john@example.com"
+    inbox-forge search "project report" --in subject,content
 
     # Filter by date
-    python -m src.scripts.search "meeting" --after 2024-01-01 --before 2024-03-01
+    inbox-forge search "meeting" --after 2024-01-01 --before 2024-03-01
 
 Supports:
     - Field prefixes: from:, to:, subject:
     - Field filtering: --in subject,content,sender,recipient
     - Date filtering: --after/--before YYYY-MM-DD
-    - Custom index location: --dir PATH
+    - Custom data directory: --data-dir PATH
 """
 
-from pathlib import Path
 import argparse
-from datetime import datetime
-from typing import Optional
-from src.core.search_engine import SearchEngine
-from src.config.paths import SEARCH_INDEX_DIR
 import logging
+import sys
+from datetime import datetime
+from pathlib import Path
+
+from inbox_forge.core.search_engine import SearchEngine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,7 +35,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def parse_date(date_str: str) -> Optional[datetime]:
+def parse_date(date_str: str) -> datetime | None:
     """Parse YYYY-MM-DD date string."""
     try:
         return datetime.strptime(date_str, '%Y-%m-%d')
@@ -47,20 +47,12 @@ def format_result(result: dict) -> str:
     """Format search result for display."""
     date = result['date'].strftime('%Y-%m-%d %H:%M')
     return (
-        f"\nDate: {date}\n"
-        f"From: {result['sender']}\n"
-        f"To: {result['recipient']}\n"
-        f"Subject: {result['subject']}\n"
-        f"ID: {result['id']}"
+        f'\nDate: {date}\n'
+        f'From: {result["sender"]}\n'
+        f'To: {result["recipient"]}\n'
+        f'Subject: {result["subject"]}\n'
+        f'ID: {result["id"]}'
     )
-
-
-def verify_index_location(index_dir: Path) -> bool:
-    """Verify InboxForge directory structure exists."""
-    if index_dir != SEARCH_INDEX_DIR:
-        logger.error(f'Error: Index directory must be {SEARCH_INDEX_DIR}')
-        return False
-    return True
 
 
 def parse_query(query: str) -> tuple[str, list]:
@@ -80,16 +72,17 @@ def parse_query(query: str) -> tuple[str, list]:
     return query.strip(), fields
 
 
-def main():
+def main(argv: list | None = None) -> None:
     parser = argparse.ArgumentParser(
+        prog='inbox-forge search',
         description='Search through InboxForge emails.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.scripts.search "important meeting"              # Search all fields
-  python -m src.scripts.search "from:john@example.com"         # Search by sender
-  python -m src.scripts.search "meeting" --in subject,content     # Search specific fields
-  python -m src.scripts.search "report" --after 2024-01-01     # Filter by date
+  inbox-forge search "important meeting"              # Search all fields
+  inbox-forge search "from:john@example.com"         # Search by sender
+  inbox-forge search "meeting" --in subject,content     # Search specific fields
+  inbox-forge search "report" --after 2024-01-01     # Filter by date
 """,
     )
 
@@ -104,15 +97,12 @@ Examples:
     )
     parser.add_argument('--after', help='Start date (YYYY-MM-DD)')
     parser.add_argument('--before', help='End date (YYYY-MM-DD)')
-    parser.add_argument('--dir', '-d', help='Index directory (default: auto-detect)')
+    parser.add_argument(
+        '--data-dir', '-d', '--dir', dest='data_dir', help='Data directory (default: data/)'
+    )
 
-    args = parser.parse_args()
-    index_dir = Path(args.dir) if args.dir else None
-
-    if index_dir and not verify_index_location(index_dir):
-        return
-
-    search_engine = SearchEngine(index_dir)
+    args = parser.parse_args(argv)
+    search_engine = SearchEngine(Path(args.data_dir) / 'search_index' if args.data_dir else None)
     query, detected_fields = parse_query(args.query)
     fields = args.fields if args.fields else detected_fields
 
@@ -123,14 +113,14 @@ Examples:
         if (args.after and not start_date) or (args.before and not end_date):
             print('\nError: Invalid date format. Use YYYY-MM-DD')
             print('Example: --after 2024-01-01 --before 2024-12-31')
-            return
+            sys.exit(2)
         date_range = (start_date, end_date)
 
     try:
         results = search_engine.search(query=query, fields=fields, date_range=date_range)
     except ValueError as e:
         print(f'\nError: {str(e)}')
-        return
+        sys.exit(2)
 
     if not results:
         print('\nNo matching emails found.')

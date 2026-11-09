@@ -9,22 +9,19 @@ Converts emails to JSON and builds a search index for fast retrieval. Features i
 - Optional HTML preservation
 
 Usage:
-    python -m src.scripts.ingest emails/                  # Basic usage
-    python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
-    python -m src.scripts.ingest emails/ --include-html   # Keep HTML
+    inbox-forge ingest emails/                  # Basic usage
+    inbox-forge ingest emails/ -d /data/inbox   # Custom data dir
+    inbox-forge ingest emails/ --include-html   # Keep HTML
 """
 
 import argparse
 import logging
 import sys
 from pathlib import Path
-from typing import List, Set, Tuple, Optional
 
-from src.config.settings import INCLUDE_HTML
-from src.core.json_organizer import JsonOrganizer
-from src.core.search_engine import SearchEngine
-from src.config.paths import EMAIL_IDS_FILE
-from src.types.emails import ProcessingSummary
+from inbox_forge.core.json_organizer import JsonOrganizer
+from inbox_forge.core.search_engine import SearchEngine
+from inbox_forge.types.emails import ProcessingSummary
 
 # Configure logging
 logging.basicConfig(
@@ -35,7 +32,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def find_email_files(input_folder: Path) -> List[Path]:
+def find_email_files(input_folder: Path) -> list[Path]:
     """Find all .eml files in input folder recursively."""
     if not input_folder.exists():
         logger.error(f'Input folder not found: {input_folder}')
@@ -45,7 +42,7 @@ def find_email_files(input_folder: Path) -> List[Path]:
     return sorted(input_folder.glob('**/*.eml'))
 
 
-def validate_email_files(email_files: List[Path], input_folder: Path) -> bool:
+def validate_email_files(email_files: list[Path], input_folder: Path) -> bool:
     """Check if valid email files exist and provide guidance if not."""
     if email_files:
         return True
@@ -60,25 +57,9 @@ def validate_email_files(email_files: List[Path], input_folder: Path) -> bool:
     return False
 
 
-def load_existing_ids() -> Set[str]:
-    """Load previously processed email IDs from tracking file."""
-    if not EMAIL_IDS_FILE.exists():
-        return set()
-
-    with open(EMAIL_IDS_FILE) as f:
-        return {line.strip() for line in f if line.strip()}
-
-
-def save_existing_ids(email_ids: Set[str]) -> None:
-    """Save processed email IDs to tracking file."""
-    EMAIL_IDS_FILE.parent.mkdir(parents=True, exist_ok=True)
-    with open(EMAIL_IDS_FILE, 'w') as f:
-        f.writelines(f'{id}\n' for id in sorted(email_ids))
-
-
 def process_single_email(
     eml_file: Path, json_organizer: JsonOrganizer, search_engine: SearchEngine
-) -> Tuple[bool, bool]:
+) -> tuple[bool, bool]:
     """
     Process a single email file.
 
@@ -112,15 +93,15 @@ def log_processing_results(
         logger.warning(f'Failed to process: {error_count} emails')
 
     logger.info(
-        f"Total emails in system: {summary['total_emails']}\n"
-        f"Last updated: {summary['last_updated']}"
+        f'Total emails in system: {summary["total_emails"]}\n'
+        f'Last updated: {summary["last_updated"]}'
     )
 
 
 def process_folder(
     input_folder: Path,
-    data_dir: Optional[Path] = None,
-    include_html: bool = INCLUDE_HTML,
+    data_dir: Path | None = None,
+    include_html: bool = False,
 ) -> None:
     """
     Process all emails in a folder.
@@ -133,28 +114,16 @@ def process_folder(
     ):
         return
 
-    # Initialize processing
-    existing_ids = load_existing_ids()
+    # Set up processors
+    json_organizer = JsonOrganizer(data_dir, exclude_html=not include_html)
+    search_engine = SearchEngine(data_dir / 'search_index' if data_dir else None)
     total_emails = len(email_files)
 
     logger.info(
-        f"Found {len(existing_ids)} existing emails\n"
-        f"Found {total_emails} new emails to process\n"
-        f"HTML content will be {'included' if include_html else 'excluded'}"
+        f'Found {len(json_organizer.get_email_ids())} existing emails\n'
+        f'Found {total_emails} new emails to process\n'
+        f'HTML content will be {"included" if include_html else "excluded"}'
     )
-
-    if data_dir is not None:
-        index_dir = data_dir / 'search_index'
-        if not index_dir.exists():
-            raise FileNotFoundError(f'Index directory does not exist: {index_dir}')
-    else:
-        index_dir = None  # default
-
-    # Set up processors
-    json_organizer = JsonOrganizer(
-        data_dir, exclude_html=not include_html, existing_ids=existing_ids
-    )
-    search_engine = SearchEngine(index_dir)
 
     # Process emails
     processed = skipped = errors = 0
@@ -169,21 +138,20 @@ def process_folder(
         else:
             errors += 1
 
-    # Save results
-    save_existing_ids(json_organizer.get_email_ids())
     log_processing_results(processed, skipped, errors, json_organizer.get_processing_summary())
 
 
-def main() -> None:
+def main(argv: list[str] | None = None) -> None:
     """Parse command line arguments and run email processing."""
     parser = argparse.ArgumentParser(
+        prog='inbox-forge ingest',
         description='Import email files (.eml) into a searchable format.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python -m src.scripts.ingest emails/                  # Basic usage
-  python -m src.scripts.ingest emails/ -d /data/inbox   # Custom data dir
-  python -m src.scripts.ingest emails/ --include-html   # Keep HTML
+  inbox-forge ingest emails/                  # Basic usage
+  inbox-forge ingest emails/ -d /data/inbox   # Custom data dir
+  inbox-forge ingest emails/ --include-html   # Keep HTML
 """,
     )
 
@@ -193,7 +161,7 @@ Examples:
     )
     parser.add_argument('--include-html', action='store_true', help='Preserve HTML content')
 
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     try:
         process_folder(

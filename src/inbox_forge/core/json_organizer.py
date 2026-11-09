@@ -3,15 +3,14 @@ JSON organizer for InboxForge.
 Processes email data into structured JSON format with local attachment handling.
 """
 
-from typing import Optional, Union
-from pathlib import Path
-from datetime import datetime
 import json
 import logging
-from src.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
-from src.utils.file_handler import FileHandler
-from src.config.paths import SUMMARY_FILE, EMAIL_IDS_FILE
-from src.types.emails import ProcessedEmail, ProcessingSummary
+from datetime import datetime
+from pathlib import Path
+
+from inbox_forge.core.email_parser import DuplicateEmailError, EmailParser, ParsedEmail
+from inbox_forge.types.emails import ProcessedEmail, ProcessingSummary
+from inbox_forge.utils.file_handler import FileHandler
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +20,9 @@ class JsonOrganizer:
 
     def __init__(
         self,
-        data_dir: Union[None, Path, str],
+        data_dir: None | Path | str,
         exclude_html: bool = True,
-        existing_ids: Optional[set[str]] = None,
+        existing_ids: set[str] | None = None,
     ):
         """
         Initialize the JSON organizer.
@@ -34,11 +33,11 @@ class JsonOrganizer:
             existing_ids: Optional set of existing email IDs to avoid duplicates
         """
         self.exclude_html = exclude_html
-        self.email_ids_file = EMAIL_IDS_FILE
+        self.file_handler = FileHandler(data_dir)
+        self.email_ids_file = self.file_handler.processed_dir / 'email_ids.txt'
+        self.summary_file = self.file_handler.processed_dir / 'email_summary.json'
         self.existing_ids = self._load_existing_ids() if existing_ids is None else existing_ids
         self.email_parser = EmailParser(existing_ids=self.existing_ids)
-        self.email_ids_file.parent.mkdir(parents=True, exist_ok=True)
-        self.file_handler = FileHandler(data_dir)
 
     def process_email(self, eml_path: Path) -> ProcessedEmail:
         """
@@ -66,7 +65,7 @@ class JsonOrganizer:
             self._track_email_id(processed_email['id'])
 
             logger.debug(
-                f"Processed email {processed_email['id']}: {processed_email['metadata']['subject']}"
+                f'Processed email {processed_email["id"]}: {processed_email["metadata"]["subject"]}'
             )
             return processed_email
 
@@ -76,7 +75,7 @@ class JsonOrganizer:
         except Exception as e:
             logger.error(f'Failed to process {eml_path.name}: {str(e)}')
             logger.debug(
-                f'Raw email data structure: {raw_email_data.keys() if raw_email_data else "Not available"}'
+                'Raw email data keys: %s', list(raw_email_data) if raw_email_data else None
             )
             raise
 
@@ -88,16 +87,11 @@ class JsonOrganizer:
 
     def _build_processed_email(self, raw_data: ParsedEmail, eml_path: Path) -> ProcessedEmail:
         """Build processed email structure from raw data."""
-        original_body = raw_data['body']
-        content = ''
-        if self.exclude_html:
-            content = original_body.get('plain', '')
-        else:
-            logger.warning('HTML content will be included')
-            # concatenate plain and html
-            content = original_body.get('plain', '') + original_body.get('html', '')
-
-        content = str(content).strip()
+        body = raw_data['body']
+        content = body.get('plain') or ''
+        if not self.exclude_html and body.get('html'):
+            content = f'{content}\n{body["html"]}'
+        content = content.strip()
 
         return {
             'id': raw_data['id'],
@@ -134,8 +128,8 @@ class JsonOrganizer:
             ProcessingSummary: Summary information including total emails and last updated
         """
         try:
-            if SUMMARY_FILE.exists():
-                with open(SUMMARY_FILE, 'r', encoding='utf-8') as f:
+            if self.summary_file.exists():
+                with open(self.summary_file, encoding='utf-8') as f:
                     return json.load(f)
 
             return self._create_default_summary()
@@ -153,8 +147,8 @@ class JsonOrganizer:
         }
 
         try:
-            SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
-            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+            self.summary_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.summary_file, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
         except Exception as e:
             logger.warning(f'Failed to save default summary: {e}')
@@ -181,7 +175,7 @@ class JsonOrganizer:
                 }
             )
 
-            with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+            with open(self.summary_file, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, indent=2)
 
         except Exception as e:
@@ -193,7 +187,7 @@ class JsonOrganizer:
             return set()
 
         try:
-            with open(self.email_ids_file, 'r') as f:
+            with open(self.email_ids_file) as f:
                 return set(line.strip() for line in f if line.strip())
         except Exception as e:
             logger.error(f'Failed to load existing IDs: {e}')

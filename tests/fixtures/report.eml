@@ -1,0 +1,13 @@
+From: Alice Smith <alice@example.com>
+To: "Doe, John" <john@example.com>, bob@example.com
+Cc: Carol <carol@example.com>
+Subject: Quarterly report
+Date: Tue, 05 Mar 2024 10:00:00 -0800
+Message-ID: <report@example.com>
+Content-Type: text/plain; charset=utf-8
+
+Hi John,
+
+The quarterly report is ready for review.
+
+Alice
